@@ -14,6 +14,7 @@ import {
   migrateWorkspace,
   planSnapshotPrune,
   planRename,
+  applyRename,
   pruneSnapshots,
   readMarkdown,
   readAttachmentPreview,
@@ -73,6 +74,17 @@ test("rename planning identifies wikilink and embed changes without writing", as
   assert.match(plan.changes[0].after, /\[\[Renamed\]\].*!\[\[Renamed\|source\]\]/);
   assert.deepEqual(await readFile(path.join(f.workspace, "Target.md")), original);
   await assert.rejects(readFile(path.join(f.workspace, "Renamed.md")), (error) => error.code === "ENOENT");
+});
+
+test("approved rename checkpoints and updates links without losing bytes", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await writeFile(path.join(f.workspace, "Target.md"), "# Target\n");
+  await writeFile(path.join(f.workspace, "Index.md"), "See [[Target]].\n");
+  const result = await applyRename(f.workspace, "Target.md", "Renamed.md");
+  assert.equal(result.applied, true);
+  assert.equal(await readFile(path.join(f.workspace, "Renamed.md"), "utf8"), "# Target\n");
+  assert.equal(await readFile(path.join(f.workspace, "Index.md"), "utf8"), "See [[Renamed]].\n");
+  await assert.rejects(readFile(path.join(f.workspace, "Target.md")), (error) => error.code === "ENOENT");
 });
 
 test("interruption before atomic rename preserves old file and removes temporary file", async (t) => {

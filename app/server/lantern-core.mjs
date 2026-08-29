@@ -286,6 +286,29 @@ export async function planRename(root, from, to) {
   return { source, target, changes, affectedFiles: changes.map((change) => change.path), writeRequired: true, reviewRequired: true };
 }
 
+export async function applyRename(root, from, to) {
+  const plan = await planRename(root, from, to);
+  const canonical = await canonicalRoot(root);
+  const sourcePath = path.join(canonical, ...plan.source.split("/"));
+  const targetPath = path.join(canonical, ...plan.target.split("/"));
+  const originals = new Map();
+  for (const change of plan.changes) originals.set(change.path, Buffer.from(change.before, "utf8"));
+  try {
+    for (const [relative, bytes] of originals) await checkpoint(canonical, relative, bytes, "before-rename");
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await rename(sourcePath, targetPath);
+    for (const change of plan.changes) {
+      const destination = change.path === plan.source ? plan.target : change.path;
+      await durableWrite(path.join(canonical, ...destination.split("/")), Buffer.from(change.after, "utf8"));
+    }
+    return { ...plan, applied: true };
+  } catch (error) {
+    await rename(targetPath, sourcePath).catch(() => {});
+    for (const [relative, bytes] of originals) await durableWrite(path.join(canonical, ...relative.split("/")), bytes).catch(() => {});
+    throw error;
+  }
+}
+
 export function parseMarkdownStructure(content) {
   const headings = [];
   const wikilinks = [];
