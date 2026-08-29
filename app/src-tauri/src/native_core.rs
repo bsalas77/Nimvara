@@ -202,6 +202,8 @@ pub struct CompatibilityReport {
     pub unicode_paths: usize,
     pub long_paths: usize,
     pub longest_relative_path: usize,
+    pub broken_links: usize,
+    pub ambiguous_links: usize,
     pub extensions: HashMap<String, usize>,
 }
 
@@ -240,6 +242,8 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
             .map(|file| file.path.len())
             .max()
             .unwrap_or(0),
+        broken_links: 0,
+        ambiguous_links: 0,
         extensions: HashMap::new(),
     };
     for file in &inventory {
@@ -262,6 +266,12 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
             if trimmed.starts_with("> [!") {
                 report.callouts += 1;
             }
+        }
+    }
+    for note in &dashboard.notes {
+        if let Ok(context) = note_context(root, &note.path) {
+            report.broken_links += context.outgoing.iter().filter(|link| link.status == "missing").count();
+            report.ambiguous_links += context.outgoing.iter().filter(|link| link.status == "ambiguous").count();
         }
     }
     Ok(report)
