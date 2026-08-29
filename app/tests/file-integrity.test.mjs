@@ -10,7 +10,10 @@ import {
   createSnapshot,
   exportStatic,
   listHistory,
+  listSnapshots,
   migrateWorkspace,
+  planSnapshotPrune,
+  pruneSnapshots,
   readMarkdown,
   restoreHistory,
   restoreSnapshot,
@@ -153,6 +156,20 @@ test("static export is safe, selected, and does not alter Markdown", async (t) =
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   await assert.rejects(readFile(path.join(destination, "Two.html")), (error) => error.code === "ENOENT");
   assert.equal(await readFile(path.join(f.workspace, "One.md"), "utf8"), "# One\n<script>alert(1)</script>");
+});
+
+test("snapshot retention is previewable and requires explicit confirmation", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await writeFile(path.join(f.workspace, "Note.md"), "retention");
+  await createSnapshot(f.workspace, f.backups);
+  await createSnapshot(f.workspace, f.backups);
+  await createSnapshot(f.workspace, f.backups);
+  const plan = await planSnapshotPrune(f.backups, 2);
+  assert.equal(plan.retain.length, 2);
+  assert.equal(plan.remove.length, 1);
+  await assert.rejects(pruneSnapshots(f.backups, 2), (error) => error.code === "CONFIRM_REQUIRED");
+  await pruneSnapshots(f.backups, 2, true);
+  assert.equal((await listSnapshots(f.backups)).length, 2);
 });
 
 test("workspace escape and non-Markdown edit attempts are rejected", async (t) => {

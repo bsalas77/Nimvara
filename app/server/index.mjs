@@ -15,6 +15,8 @@ import {
   migrateWorkspace,
   noteContext,
   exportStatic,
+  planSnapshotPrune,
+  pruneSnapshots,
   readMarkdown,
   revealWorkspaceFile,
   restoreHistory,
@@ -164,6 +166,8 @@ export const server = createServer(async (request, response) => {
       return send(response, 200, await createSnapshot(requireWorkspace(), input.destination));
     }
     if (request.method === "GET" && url.pathname === "/api/snapshots") return send(response, 200, await listSnapshots(url.searchParams.get("destination")));
+    if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
       const input = await body(request);
       return send(response, 200, await restoreSnapshot(input.snapshotPath, input.destination));

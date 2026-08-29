@@ -470,6 +470,20 @@ export async function listSnapshots(destination) {
   return output.sort((a, b) => String(b.createdAt ?? b.id).localeCompare(String(a.createdAt ?? a.id)));
 }
 
+export async function planSnapshotPrune(destination, keep = 5) {
+  const count = Number.isInteger(keep) ? Math.max(1, Math.min(100, keep)) : 5;
+  const snapshots = (await listSnapshots(destination)).filter((snapshot) => snapshot.verified);
+  return { keep: count, retain: snapshots.slice(0, count).map((snapshot) => snapshot.id), remove: snapshots.slice(count).map((snapshot) => snapshot.id) };
+}
+
+export async function pruneSnapshots(destination, keep = 5, confirm = false) {
+  if (confirm !== true) throw new NimvaraError("CONFIRM_REQUIRED", "Snapshot pruning requires explicit confirmation.", 400);
+  const plan = await planSnapshotPrune(destination, keep);
+  const root = path.join(path.resolve(destination), SNAPSHOT_FOLDER);
+  for (const id of plan.remove) await rm(path.join(root, id), { recursive: true, force: false });
+  return plan;
+}
+
 export async function restoreSnapshot(snapshotPath, destination) {
   const snapshot = await verifySnapshot(snapshotPath);
   const target = path.resolve(destination);

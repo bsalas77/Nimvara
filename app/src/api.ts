@@ -39,6 +39,8 @@ export const api = {
   restoreHistory: (checkpointId: string, expectedHash: string) => request<{ hash: string }>("/api/history/restore", { method: "POST", body: JSON.stringify({ checkpointId, expectedHash }) }),
   snapshot: (destination: string) => request<Snapshot>("/api/snapshots", { method: "POST", body: JSON.stringify({ destination }) }),
   snapshots: (destination: string) => request<Snapshot[]>(`/api/snapshots?destination=${encodeURIComponent(destination)}`),
+  snapshotPrunePlan: (destination: string, keep = 5) => request<{ keep: number; retain: string[]; remove: string[] }>("/api/snapshots/prune-plan", { method: "POST", body: JSON.stringify({ destination, keep }) }),
+  pruneSnapshots: (destination: string, keep = 5) => request<{ keep: number; retain: string[]; remove: string[] }>("/api/snapshots/prune", { method: "POST", body: JSON.stringify({ destination, keep, confirm: true }) }),
   restoreSnapshot: (snapshotPath: string, destination: string) => request<{ destination: string; files: number; verified: boolean }>("/api/snapshots/restore", { method: "POST", body: JSON.stringify({ snapshotPath, destination }) }),
   migrateWorkspace: (source: string, destination: string) => request<MigrationReport>("/api/migration/copy", { method: "POST", body: JSON.stringify({ source, destination }) }),
   exportStatic: (destination: string, paths: string[] = []) => request<{ destination: string; files: string[]; format: string }>("/api/publishing/export", { method: "POST", body: JSON.stringify({ destination, paths }) }),
