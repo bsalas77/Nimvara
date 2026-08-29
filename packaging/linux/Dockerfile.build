@@ -1,0 +1,22 @@
+FROM rust:1.97-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl \
+    file \
+    libayatana-appindicator3-dev \
+    libfuse2 \
+    librsvg2-dev \
+    libssl-dev \
+    libwebkit2gtk-4.1-dev \
+    libxdo-dev \
+    patchelf \
+    wget \
+    xdg-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+RUN cargo install tauri-cli --version 2.11.4 --locked
+CMD ["bash"]

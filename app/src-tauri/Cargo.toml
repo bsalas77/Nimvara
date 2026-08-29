@@ -1,0 +1,32 @@
+[package]
+name = "nimvara"
+version = "0.7.0"
+description = "Local-first Markdown knowledge application"
+authors = ["Nimvara"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+notify = "8.2.0"
+reqwest = { version = "0.13.1", features = ["blocking", "json"] }
+tauri = { version = "2", features = [] }
+time = { version = "0.3", features = ["formatting"] }
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem", "Win32_System_SystemInformation"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[patch.crates-io]
+# Exact upstream security backport for RUSTSEC-2024-0429. Remove when Tauri's
+# Linux stack uses glib >= 0.20.0 or upstream publishes a fixed 0.18 release.
+glib = { path = "third_party/glib-0.18.5-patched" }

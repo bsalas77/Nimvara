@@ -1,0 +1,78 @@
+name: Cross-platform release candidates
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            bundle: deb
+            config: tauri.linux.conf.json
+            artifact: app/src-tauri/target/release/bundle/deb/*.deb
+            name: nimvara-linux-deb
+          - os: macos-14
+            bundle: app
+            config: tauri.macos.conf.json
+            artifact: app/src-tauri/target/release/bundle/macos/*.app
+            name: nimvara-macos-unsigned
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install Linux native dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Select pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component clippy,rustfmt
+      - name: Run native qualification
+        working-directory: app/src-tauri
+        run: |
+          cargo +1.97.1 fmt --check
+          cargo +1.97.1 test --locked
+          cargo +1.97.1 clippy --locked --all-targets -- -D warnings
+      - name: Install pinned Tauri CLI
+        run: cargo +1.97.1 install tauri-cli --version 2.11.4 --locked
+      - name: Build native package
+        working-directory: app/src-tauri
+        run: cargo +1.97.1 tauri build --bundles ${{ matrix.bundle }} --config ${{ matrix.config }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Select pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component clippy,rustfmt
+      - name: Run native qualification
+        working-directory: app/src-tauri
+        run: |
+          cargo +1.97.1 fmt --check
+          cargo +1.97.1 test --locked
+          cargo +1.97.1 clippy --locked --all-targets -- -D warnings
+      - name: Build development installer and MSIX
+        shell: powershell
+        run: |
+          .\packaging\windows\build-installer.ps1
+          .\packaging\windows\build-msix.ps1
+      - name: Generate SBOM
+        run: node tools/generate-sbom.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nimvara-windows-unsigned
+          path: |
+            dist/Nimvara-Setup-0.7.0-dev.exe
+            dist/Nimvara-0.7.0-dev.msix
+            dist/nimvara.cdx.json
+          if-no-files-found: error

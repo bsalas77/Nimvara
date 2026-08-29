@@ -1,0 +1,9 @@
+await import("./file-integrity.test.mjs");
+await import("./ingestion.test.mjs");
+await import("./compatibility.test.mjs");
+await import("./accessibility.test.mjs");
+await import("./mindmap.test.mjs");
+await import("./productivity.test.mjs");
+await import("./workspace-ui.test.mjs");
+await import("./capabilities.test.mjs");
+await import("./sync.test.mjs");

@@ -1,0 +1,12 @@
+dist/
+Lantern-Setup.exe
+Nimvara-Setup.exe
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+.tmp-docx/
+.tmp-docx-qa/
+*.log
+.DS_Store
+Thumbs.db
+.lantern/

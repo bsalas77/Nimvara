@@ -1,0 +1,12 @@
+{
+  "name": "nimvara-daily-driver",
+  "private": true,
+  "version": "0.7.0-dev",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-all.mjs",
+    "validate": "node tests/run-all.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

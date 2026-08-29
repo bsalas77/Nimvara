@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Run safety and compatibility tests
+        working-directory: app
+        run: node tests/run-all.mjs
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Select stable MSVC Rust
+        run: rustup default stable-msvc
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked --manifest-path app/src-tauri/Cargo.toml
+      - name: Run native Rust safety tests
+        run: cargo test --locked --manifest-path app/src-tauri/Cargo.toml
+      - name: Enforce formatting and static analysis
+        run: |
+          cargo fmt --check --manifest-path app/src-tauri/Cargo.toml
+          cargo clippy --locked --manifest-path app/src-tauri/Cargo.toml --all-targets -- -D warnings
+      - name: Install and run Rust dependency audit
+        shell: powershell
+        run: |
+          cargo install cargo-audit --locked
+          .\tools\audit-rust.ps1
+      - name: Build installer
+        shell: powershell
+        run: .\packaging\windows\build-installer.ps1
+      - name: Generate checksum
+        shell: powershell
+        run: (Get-FileHash .\dist\Nimvara-Setup-0.7.0-dev.exe -Algorithm SHA256).Hash.ToLower() + '  Nimvara-Setup-0.7.0-dev.exe' | Set-Content .\dist\SHA256SUMS.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nimvara-windows-unsigned
+          path: |
+            dist/Nimvara-Setup-0.7.0-dev.exe
+            dist/SHA256SUMS.txt

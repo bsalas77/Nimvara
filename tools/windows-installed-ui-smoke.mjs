@@ -1,0 +1,194 @@
+import { spawn } from "node:child_process";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import os from "node:os";
+import path from "node:path";
+
+const exe = process.argv[2];
+const sourceVault = process.argv[3];
+if (!exe || !sourceVault) throw new Error("Usage: node windows-installed-ui-smoke.mjs <Nimvara.exe> <read-only-source-vault>");
+
+const root = await mkdtemp(path.join(os.tmpdir(), "nimvara-installed-smoke-"));
+const workspace = path.join(root, "copied-vault");
+const backups = path.join(root, "backups");
+const restore = path.join(root, "restored-vault");
+await cp(sourceVault, workspace, { recursive: true, force: false });
+
+const digestTree = async (folder) => {
+  const { readdir, stat } = await import("node:fs/promises");
+  const hash = createHash("sha256");
+  const walk = async (current, relative = "") => {
+    for (const name of (await readdir(current)).sort()) {
+      if (relative === "" && name === ".lantern") continue;
+      const full = path.join(current, name);
+      const rel = path.join(relative, name).replaceAll("\\", "/");
+      const info = await stat(full);
+      if (info.isDirectory()) await walk(full, rel);
+      else {
+        hash.update(rel);
+        hash.update(await readFile(full));
+      }
+    }
+  };
+  await walk(folder);
+  return hash.digest("hex");
+};
+
+const sourceBefore = await digestTree(sourceVault);
+let child;
+let socket;
+let nextId = 1;
+const pending = new Map();
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function launch(port) {
+  child = spawn(exe, [], {
+    env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}` },
+    stdio: "ignore",
+  });
+  let page;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    try {
+      const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+      page = targets.find((target) => target.type === "page");
+      if (page) break;
+    } catch {}
+    await sleep(200);
+  }
+  if (!page) throw new Error("WebView2 debugging target did not become available.");
+  socket = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => {
+    socket.onopen = resolve;
+    socket.onerror = reject;
+  });
+  socket.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    if (message.id && pending.has(message.id)) {
+      pending.get(message.id)(message);
+      pending.delete(message.id);
+    }
+  };
+}
+
+async function cdp(method, params = {}) {
+  const id = nextId++;
+  socket.send(JSON.stringify({ id, method, params }));
+  const message = await new Promise((resolve) => pending.set(id, resolve));
+  if (message.error) throw new Error(JSON.stringify(message.error));
+  return message.result;
+}
+
+async function evaluate(expression) {
+  const result = await cdp("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+  if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+  return result.result.value;
+}
+
+async function waitFor(expression, label) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (await evaluate(expression)) return;
+    await sleep(200);
+  }
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
+async function stop() {
+  try { socket?.close(); } catch {}
+  if (child && !child.killed) child.kill();
+  await sleep(500);
+}
+
+const notePath = "00 Start Here.md";
+const noteFullPath = path.join(workspace, notePath);
+const originalCopy = await readFile(noteFullPath, "utf8");
+const productivityPath = path.join(workspace, "Nimvara Productivity Smoke.md");
+await writeFile(productivityPath, "---\ntype: test\nstatus: active\n---\n\n# Productivity smoke\n\n> [!warning] Safe preview\n> Scripts must remain text.\n\n- [ ] Complete safely\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n$E=mc^2$[^n]\n\n[^n]: Local footnote\n\n```mermaid\nflowchart TD\nA[Start] --> B[Finish]\n```\n\n![[Embedded Smoke#Section]]\n\n<script>alert('never')</script>\n", "utf8");
+await writeFile(path.join(workspace, "Embedded Smoke.md"), "# Embedded\n\n## Section\n\nRead-only transclusion works.\n\n## Other\n\nExcluded.", "utf8");
+await writeFile(path.join(workspace, "Nimvara Smoke.canvas"), JSON.stringify({ nodes: [{ id: "a", type: "text", text: "Canvas safe", x: 0, y: 0, width: 220, height: 100 }, { id: "b", type: "file", file: "Embedded Smoke.md", x: 320, y: 100, width: 220, height: 100 }], edges: [{ id: "e", fromNode: "a", toNode: "b" }] }), "utf8");
+const marker = `\n\nNimvara recovery smoke ${Date.now()}`;
+const report = { sourceVaultMutated: null, copiedVault: workspace, checks: {} };
+
+try {
+  await launch(9331);
+  await waitFor(`Boolean(document.querySelector("#workspacePath"))`, "first-run UI");
+  await evaluate(`document.querySelector("#workspacePath").value=${JSON.stringify(workspace)}; document.querySelector("#open").click();`);
+  await waitFor(`!document.querySelector("#shell").classList.contains("hidden")`, "workspace shell");
+  report.checks.workspaceOpen = await evaluate(`document.querySelectorAll("#files button").length >= 45`);
+  report.checks.fileTree = await evaluate(`document.querySelectorAll("#files details").length > 0`);
+  report.checks.accessibility = await evaluate(`(() => {
+    const controls=[...document.querySelectorAll("input,textarea,button")];
+    const named=controls.every(el => el.tagName==="BUTTON" ? el.textContent.trim().length>0 : Boolean(el.getAttribute("aria-label") || (el.id && document.querySelector('label[for="'+el.id+'"]')) || el.closest("label")));
+    return document.documentElement.lang==="en" && named && document.querySelectorAll('[role="status"][aria-live]').length>=2 && Boolean(document.querySelector(".skip-link"));
+  })()`);
+  await evaluate(`document.querySelector("#showTasks").click()`);
+  await waitFor(`document.querySelector("#tasks").textContent.includes("Complete safely")`, "native task dashboard");
+  await evaluate(`[...document.querySelectorAll("#tasks .task-row")].find(row=>row.textContent.includes("Complete safely")).querySelector("[data-task-toggle]").click()`);
+  await waitFor(`!document.querySelector("#taskReview").classList.contains("hidden")`, "task review");
+  await evaluate(`document.querySelector("#approveTaskChange").click()`);
+  await waitFor(`document.querySelector("#footerStatus").textContent.includes("Task change checkpointed")`, "task checkpoint save");
+  report.checks.taskDashboard = (await readFile(productivityPath, "utf8")).includes("- [x] Complete safely");
+
+  await evaluate(`document.querySelector('[data-path="${encodeURIComponent("Nimvara Productivity Smoke.md")}"]').click()`);
+  await waitFor(`document.querySelector("#notePath").textContent==="Nimvara Productivity Smoke.md"`, "productivity note");
+  await evaluate(`document.querySelector("#previewView").click()`);
+  await waitFor(`!document.querySelector("#markdownPreview").classList.contains("hidden")`, "Markdown preview");
+  report.checks.safePreview = await evaluate(`document.querySelector("#markdownPreview .callout-warning") && document.querySelector("#markdownPreview table") && document.querySelector("#markdownPreview .math-inline") && document.querySelector("#markdownPreview .mermaid-diagram") && !document.querySelector("#markdownPreview script") && document.querySelector("#markdownPreview").textContent.includes("alert('never')")`);
+  await evaluate(`document.querySelector("#markdownPreview [data-preview-embed]").click()`);
+  await waitFor(`document.querySelector("#markdownPreview .transclusion")`, "read-only transclusion");
+  report.checks.transclusion = await evaluate(`document.querySelector("#markdownPreview .transclusion").textContent.includes("Read-only transclusion works") && !document.querySelector("#markdownPreview .transclusion").textContent.includes("Excluded")`);
+  await evaluate(`document.dispatchEvent(new KeyboardEvent("keydown",{key:"k",ctrlKey:true,bubbles:true}))`);
+  await waitFor(`document.querySelector("#commandPalette").open`, "command palette");
+  report.checks.commandPalette = await evaluate(`document.querySelectorAll("#commandResults button").length >= 6`);
+  await evaluate(`document.querySelector("#commandPalette").close(); document.querySelector("#editView").click()`);
+  await evaluate(`document.querySelector("#propertyKey").value="owner"; document.querySelector("#propertyValue").value="local"; document.querySelector("#previewPropertyEdit").click()`);
+  await waitFor(`!document.querySelector("#propertyEditReview").classList.contains("hidden")`, "property review");
+  await evaluate(`document.querySelector("#approvePropertyEdit").click(); document.querySelector("#save").click()`);
+  await waitFor(`document.querySelector("#saveState").textContent==="Saved"`, "property save");
+  report.checks.propertyEdit = (await readFile(productivityPath, "utf8")).includes("owner: local");
+  await evaluate(`document.querySelector("#propertyViewMode").value="table"; document.querySelector("#propertyQuery").value="type:test"; document.querySelector("#runPropertyView").click()`);
+  await waitFor(`document.querySelector("#propertyResults table")`, "structured property table");
+  report.checks.structuredView = await evaluate(`document.querySelector("#propertyResults table").textContent.includes("status")`);
+
+  await evaluate(`document.querySelector("#calendarDate").value="2099-01-02"; document.querySelector("#openDate").click()`);
+  await waitFor(`document.querySelector("#notePath").textContent==="Daily/2099-01-02.md"`, "calendar daily note");
+  report.checks.calendarDaily = await readFile(path.join(workspace, "Daily", "2099-01-02.md"), "utf8").then((content) => content.includes("2099-01-02"), () => false);
+  await evaluate(`document.querySelector("#runCompatibility").click()`);
+  await waitFor(`!document.querySelector("#compatibilityResults").classList.contains("hidden")`, "compatibility report");
+  report.checks.compatibilityScan = await evaluate(`document.querySelector("#compatibilityResults").textContent.includes("Read-only compatibility summary")`);
+  await evaluate(`document.querySelector("#canvasPath").value="Nimvara Smoke.canvas"; document.querySelector("#openCanvas").click()`);
+  await waitFor(`document.querySelector("#canvasViewer svg")`, "read-only Canvas viewer");
+  report.checks.canvasViewer = await evaluate(`document.querySelector("#canvasViewer svg").textContent.includes("Canvas safe")`);
+  await evaluate(`document.querySelector('[data-path="${encodeURIComponent(notePath)}"]').click()`);
+  await waitFor(`document.querySelector("#notePath").textContent===${JSON.stringify(notePath)}`, "recovery source note");
+  await evaluate(`document.querySelector("#content").value += ${JSON.stringify(marker)}; document.querySelector("#content").dispatchEvent(new Event("input",{bubbles:true}));`);
+  await waitFor(`document.querySelector("#saveState").textContent==="Draft protected"`, "recovery journal");
+  report.checks.recoveryJournal = true;
+  await stop();
+
+  await launch(9332);
+  await waitFor(`Boolean(document.querySelector("#workspacePath"))`, "restarted UI");
+  await evaluate(`document.querySelector("#workspacePath").value=${JSON.stringify(workspace)}; document.querySelector("#open").click();`);
+  await waitFor(`!document.querySelector("#recovery").classList.contains("hidden")`, "recovery prompt");
+  await evaluate(`document.querySelector("#recoverDraft").click(); document.dispatchEvent(new KeyboardEvent("keydown",{key:"s",ctrlKey:true,bubbles:true}));`);
+  await waitFor(`document.querySelector("#saveState").textContent==="Saved"`, "recovered save");
+  report.checks.crashRecovery = (await readFile(noteFullPath, "utf8")).endsWith(marker);
+
+  const searchCount = await evaluate(`window.__TAURI__.core.invoke("native_search",{query:"Nimvara recovery smoke"}).then(r=>r.length)`);
+  report.checks.search = searchCount >= 1;
+  const snapshot = await evaluate(`window.__TAURI__.core.invoke("native_create_snapshot",{destination:${JSON.stringify(backups)}})`);
+  const restored = await evaluate(`window.__TAURI__.core.invoke("native_restore_snapshot",{snapshotPath:${JSON.stringify(snapshot.path)},destination:${JSON.stringify(restore)}})`);
+  report.checks.backupRestore = restored.verified && (await digestTree(workspace)) === (await digestTree(restore));
+
+  const disk = await evaluate(`window.__TAURI__.core.invoke("native_read_note",{path:${JSON.stringify(notePath)}})`);
+  await writeFile(noteFullPath, `${originalCopy}\nexternal OneDrive-style change`, "utf8");
+  const conflict = await evaluate(`window.__TAURI__.core.invoke("native_save_note",{path:${JSON.stringify(notePath)},content:"unsafe overwrite",expectedHash:${JSON.stringify(disk.hash)}}).then(()=>false,()=>true)`);
+  report.checks.externalConflict = conflict && (await readFile(noteFullPath, "utf8")).includes("external OneDrive-style change");
+  await stop();
+  report.sourceVaultMutated = sourceBefore !== await digestTree(sourceVault);
+  report.passed = !report.sourceVaultMutated && Object.values(report.checks).every(Boolean);
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  if (!report.passed) process.exitCode = 1;
+} finally {
+  await stop();
+  await rm(root, { recursive: true, force: true });
+}
