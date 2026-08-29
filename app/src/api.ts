@@ -44,5 +44,6 @@ export const api = {
   restoreSnapshot: (snapshotPath: string, destination: string) => request<{ destination: string; files: number; verified: boolean }>("/api/snapshots/restore", { method: "POST", body: JSON.stringify({ snapshotPath, destination }) }),
   migrateWorkspace: (source: string, destination: string) => request<MigrationReport>("/api/migration/copy", { method: "POST", body: JSON.stringify({ source, destination }) }),
   exportStatic: (destination: string, paths: string[] = []) => request<{ destination: string; files: string[]; format: string }>("/api/publishing/export", { method: "POST", body: JSON.stringify({ destination, paths }) }),
+  validateExtension: (manifest: unknown) => request<{ id: string; name: string; version: string; permissions: string[]; signed: boolean; status: string }>("/api/extensions/validate", { method: "POST", body: JSON.stringify(manifest) }),
   safety: (path?: string | null) => request<SafetyState>(`/api/safety${path ? `?path=${encodeURIComponent(path)}` : ""}`)
 };

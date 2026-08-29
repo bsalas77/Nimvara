@@ -35,6 +35,7 @@ import {
   previewLocalImport,
   previewUrlCapture
 } from "./ingestion-core.mjs";
+import { validateExtensionManifest } from "./extension-manifest.mjs";
 
 let workspace = null;
 let workspaceWatcher = null;
@@ -175,6 +176,7 @@ export const server = createServer(async (request, response) => {
       return send(response, 200, await restoreSnapshot(input.snapshotPath, input.destination));
     }
     if (request.method === "GET" && url.pathname === "/api/ingestion/capabilities") return send(response, 200, ingestionCapabilities);
+    if (request.method === "POST" && url.pathname === "/api/extensions/validate") { const input = await body(request); return send(response, 200, validateExtensionManifest(input)); }
     if (request.method === "POST" && url.pathname === "/api/ingestion/preview-url") {
       const input = await body(request);
       return send(response, 200, await previewUrlCapture(requireWorkspace(), input.url));

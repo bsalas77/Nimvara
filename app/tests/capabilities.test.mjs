@@ -34,3 +34,9 @@ test("extension manifests are narrowly permissioned and unsigned builds are expl
   assert.throws(() => validateExtensionManifest({ id: "bad", name: "Bad", version: "1.0.0", permissions: ["notes:write"] }), /Unsupported extension permissions/);
   assert.throws(() => validateExtensionManifest({ id: "bad", name: "Bad", version: "latest" }), /semantic version/);
 });
+
+test("extension validation is exposed as a local API surface", async () => {
+  const source = await readFile(path.join(root, "server", "index.mjs"), "utf8");
+  assert.match(source, /\/api\/extensions\/validate/);
+  assert.match(source, /validateExtensionManifest/);
+});
