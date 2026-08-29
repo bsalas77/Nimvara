@@ -60,6 +60,21 @@ export function proposeTaskToggle(content, line, expectedText) {
   return { content: lines.join("\n"), completed: !completed, before: lines[index].replace(`[${completed ? " " : "x"}]`, `[${completed ? "x" : " "}]`), after: lines[index] };
 }
 
+export function proposeKanbanMove(content, line, expectedText, targetColumn) {
+  const column = String(targetColumn);
+  if (!["backlog", "doing", "done"].includes(column)) throw new Error("Unknown Kanban column.");
+  const lines = String(content).split(/\r?\n/), index = Number(line) - 1;
+  if (index < 0 || index >= lines.length) throw new Error("Task source line no longer exists.");
+  const match = lines[index].match(/^(\s*[-*+]\s+)\[([ xX])\](\s+)(.+?)\s*$/);
+  if (!match || match[4] !== expectedText) throw new Error("Task source changed; refresh the board.");
+  const original = lines[index];
+  let text = match[4].replace(/\s+\((?:in progress|doing)\)\s*$/i, "").trim();
+  const completed = column === "done";
+  if (column === "doing") text = `${text} (In progress)`;
+  lines[index] = `${match[1]}[${completed ? "x" : " "}]${match[3]}${text}`;
+  return { content: lines.join("\n"), before: original, after: lines[index], column };
+}
+
 export function proposePropertyEdit(content, key, value) {
   const safeKey = String(key).trim(), safeValue = String(value).replace(/[\r\n]+/g, " ").trim();
   if (!/^[A-Za-z0-9_-]+$/.test(safeKey)) throw new Error("Property names may contain letters, numbers, underscore, and hyphen.");

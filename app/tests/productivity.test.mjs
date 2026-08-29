@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createDailyNote, dailyNotePath, filterRecords, parseFrontmatter, parseTasks, proposeMindMapChild, proposePropertyEdit, proposeTaskToggle } from "../public/productivity.js";
+import { createDailyNote, dailyNotePath, filterRecords, parseFrontmatter, parseTasks, proposeKanbanMove, proposeMindMapChild, proposePropertyEdit, proposeTaskToggle } from "../public/productivity.js";
 
 test("daily notes use stable local dates and ordinary Markdown", () => {
   const date = new Date(2026, 7, 1, 23, 59);
@@ -39,6 +39,17 @@ test("task completion proposal requires the same source line and text", () => {
   assert.equal(source, "# Work\n- [ ] Ship it");
   assert.equal(proposal.content, "# Work\n- [x] Ship it");
   assert.throws(() => proposeTaskToggle(source, 2, "Changed"), /source changed/);
+});
+
+test("Kanban moves create reviewable Markdown status proposals", () => {
+  const source = "- [ ] Ship it\n- [ ] Already (In progress)";
+  const doing = proposeKanbanMove(source, 1, "Ship it", "doing");
+  assert.equal(doing.content, "- [ ] Ship it (In progress)\n- [ ] Already (In progress)");
+  const backlog = proposeKanbanMove(doing.content, 1, "Ship it (In progress)", "backlog");
+  assert.equal(backlog.content, source);
+  const done = proposeKanbanMove(source, 1, "Ship it", "done");
+  assert.equal(done.content, "- [x] Ship it\n- [ ] Already (In progress)");
+  assert.throws(() => proposeKanbanMove(source, 1, "Changed", "done"), /source changed/);
 });
 
 test("property changes remain scalar reviewable Markdown proposals", () => {

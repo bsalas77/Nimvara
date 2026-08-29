@@ -4,7 +4,7 @@
 |---|---|---|---|
 | 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible workflow spec; native copy/verify API with manifest and safe rollback | Cancel/progress journal and first-run migration UI |
 | 2 | Attachments | Inventory, safe preservation, import preview, drop-path hint | Native byte upload/drop adapter and attachment preview |
-| 3 | Kanban | Markdown task board, persistent filters | Drag-to-review status proposals and saved boards |
+| 3 | Kanban | Markdown task board, persistent filters, drag-to-review status proposals | Saved boards and richer status vocabulary |
 | 4 | Canvas/mind map | Read-only Canvas, generated mind map, reviewed branch proposals, SVG export | Full interactive layout editing with proposal model |
 | 5 | Property/database views | Frontmatter cards/table, persistent query/view | Saved views, sorting, grouping, typed values |
 | 6 | Extensions | Read-only MCP/API and permission contract | Install/enable UI, signed manifests, adversarial tests |
