@@ -488,3 +488,34 @@ export async function restoreSnapshot(snapshotPath, destination) {
   }
   return { destination: target, files: snapshot.files.length, verified: true };
 }
+
+function htmlEscape(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+}
+
+export async function exportStatic(root, destination, selectedPaths = []) {
+  const source = await canonicalRoot(root);
+  const target = path.resolve(destination);
+  if (isInside(source, target) || isInside(target, source)) throw new NimvaraError("UNSAFE_DESTINATION", "Export destination must be separate from the workspace.");
+  const existing = await lstat(target).catch(() => null);
+  if (existing) {
+    if (!existing.isDirectory() || (await readdir(target)).length) throw new NimvaraError("EXPORT_DESTINATION", "Export destination must be a new or empty folder.");
+  } else await mkdir(target, { recursive: false });
+  const requested = new Set((Array.isArray(selectedPaths) ? selectedPaths : []).map((item) => safeRelative(item)));
+  const files = (await walk(source)).filter((file) => file.relative.toLowerCase().endsWith(".md") && (!requested.size || requested.has(file.relative)));
+  try {
+    for (const file of files) {
+      const relative = file.relative.replace(/\.md$/i, ".html");
+      const output = path.join(target, ...relative.split("/"));
+      await mkdir(path.dirname(output), { recursive: true });
+      const markdown = await readFile(file.absolute, "utf8");
+      const title = markdown.match(/^#\s+(.+)$/m)?.[1] ?? path.basename(file.relative, ".md");
+      const html = `<!doctype html><meta charset="utf-8"><title>${htmlEscape(title)}</title><main><h1>${htmlEscape(title)}</h1><pre>${htmlEscape(markdown)}</pre></main>\n`;
+      await writeFile(output, html, { flag: "wx" });
+    }
+    return { destination: target, files: files.map((file) => file.relative), format: "safe-static-html-v1" };
+  } catch (error) {
+    await rm(target, { recursive: true, force: true });
+    throw error;
+  }
+}

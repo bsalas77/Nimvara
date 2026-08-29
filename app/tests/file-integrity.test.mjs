@@ -8,6 +8,7 @@ import {
   atomicWriteForTest,
   canonicalRoot,
   createSnapshot,
+  exportStatic,
   listHistory,
   migrateWorkspace,
   readMarkdown,
@@ -139,6 +140,19 @@ test("workspace migration rejects destinations inside the source vault", async (
   const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
   await writeFile(path.join(f.workspace, "Note.md"), "source");
   await assert.rejects(migrateWorkspace(f.workspace, path.join(f.workspace, "Nested")), (error) => error.code === "MIGRATION_DESTINATION");
+});
+
+test("static export is safe, selected, and does not alter Markdown", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await writeFile(path.join(f.workspace, "One.md"), "# One\n<script>alert(1)</script>");
+  await writeFile(path.join(f.workspace, "Two.md"), "# Two\n");
+  const destination = path.join(f.root, "Published");
+  const result = await exportStatic(f.workspace, destination, ["One.md"]);
+  assert.deepEqual(result.files, ["One.md"]);
+  const html = await readFile(path.join(destination, "One.html"), "utf8");
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  await assert.rejects(readFile(path.join(destination, "Two.html")), (error) => error.code === "ENOENT");
+  assert.equal(await readFile(path.join(f.workspace, "One.md"), "utf8"), "# One\n<script>alert(1)</script>");
 });
 
 test("workspace escape and non-Markdown edit attempts are rejected", async (t) => {

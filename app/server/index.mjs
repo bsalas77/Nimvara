@@ -14,6 +14,7 @@ import {
   listWorkspaceFiles,
   migrateWorkspace,
   noteContext,
+  exportStatic,
   readMarkdown,
   revealWorkspaceFile,
   restoreHistory,
@@ -127,6 +128,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/files") return send(response, 200, await listMarkdown(requireWorkspace()));
     if (request.method === "GET" && url.pathname === "/api/workspace-files") return send(response, 200, await listWorkspaceFiles(requireWorkspace()));
     if (request.method === "POST" && url.pathname === "/api/migration/copy") { const input = await body(request); return send(response, 200, await migrateWorkspace(input.source, input.destination)); }
+    if (request.method === "POST" && url.pathname === "/api/publishing/export") { const input = await body(request); return send(response, 200, await exportStatic(requireWorkspace(), input.destination, input.paths)); }
     if (request.method === "GET" && url.pathname === "/api/workspace-files") return send(response, 200, await listWorkspaceFiles(requireWorkspace()));
     if (request.method === "GET" && url.pathname === "/api/workspace-state") return send(response, 200, await workspaceState(requireWorkspace(), url.searchParams.get("path")));
     if (request.method === "GET" && url.pathname === "/api/safety") {
