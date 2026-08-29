@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { validateExtensionManifest } from "../server/extension-manifest.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 
@@ -24,4 +25,12 @@ test("release surfaces use the packaged development version", async () => {
   const launcher = await readFile(path.join(root, "server", "desktop-launcher.mjs"), "utf8");
   assert.match(server, /version: "0\.7\.0-dev"/);
   assert.match(launcher, /version = "0\.7\.0-dev"/);
+});
+
+test("extension manifests are narrowly permissioned and unsigned builds are explicit", () => {
+  const manifest = validateExtensionManifest({ id: "example.reader", name: "Reader", version: "1.2.3", permissions: ["notes:read", "search:read"] });
+  assert.equal(manifest.status, "unsigned-development");
+  assert.deepEqual(manifest.permissions, ["notes:read", "search:read"]);
+  assert.throws(() => validateExtensionManifest({ id: "bad", name: "Bad", version: "1.0.0", permissions: ["notes:write"] }), /Unsupported extension permissions/);
+  assert.throws(() => validateExtensionManifest({ id: "bad", name: "Bad", version: "latest" }), /semantic version/);
 });
