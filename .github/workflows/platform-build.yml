@@ -46,10 +46,15 @@ jobs:
       - name: Build native package
         working-directory: app/src-tauri
         run: cargo +1.97.1 tauri build --bundles ${{ matrix.bundle }} --config ${{ matrix.config }}
+      - name: Generate native artifact checksum
+        shell: bash
+        run: sha256sum ${{ matrix.artifact }} > nimvara-${{ matrix.name }}.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ matrix.name }}
-          path: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}
+            nimvara-${{ matrix.name }}.sha256
           if-no-files-found: error
 
   windows:
@@ -74,6 +79,11 @@ jobs:
           .\packaging\windows\build-msix.ps1
       - name: Generate SBOM
         run: node tools/generate-sbom.mjs
+      - name: Generate Windows artifact checksums
+        shell: powershell
+        run: |
+          Get-FileHash dist\Nimvara-Setup-0.7.0-dev.exe -Algorithm SHA256 | Format-List | Out-File dist\nimvara-windows.sha256
+          Get-FileHash dist\Nimvara-0.7.0-dev.msix -Algorithm SHA256 | Format-List | Out-File -Append dist\nimvara-windows.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nimvara-windows-unsigned
@@ -81,4 +91,5 @@ jobs:
             dist/Nimvara-Setup-0.7.0-dev.exe
             dist/Nimvara-0.7.0-dev.msix
             dist/nimvara.cdx.json
+            dist/nimvara-windows.sha256
           if-no-files-found: error
