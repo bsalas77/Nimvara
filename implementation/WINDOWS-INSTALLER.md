@@ -3,8 +3,8 @@
 Primary artifact: `E:\Obisian Project\Lantern-Project\Nimvara-Setup.exe`  
 Versioned copy: `dist\Nimvara-Setup-0.7.0-dev.exe`  
 Version: `0.7.0-dev`  
-Size: 4,718,080 bytes  
-SHA-256: `7f3240238ef361940f5a1d83f9f25dd39072a856300091e63f9851eb568b6697`  
+Size: 4,724,224 bytes  
+SHA-256: `DF1A4F99AB761B2A9A2191FB7C89773BBE8022020294AFB3B3BC212F6E9CEA93`  
 Architecture: Windows x64 development build
 
 ## Experience and architecture
@@ -52,6 +52,8 @@ a sentinel-data preservation test on 2026-07-27.
   compatibility scan: complete JavaScript suite 38/38; installed copied-vault workflow 14/14
 - Tables, preview tasks, footnotes, math, constrained Mermaid, transclusion, structured property
   tables, and Canvas viewing: complete JavaScript suite 41/41; installed workflows 17/17
+- Current release qualification after migration, attachment-preview, diagnostics, and extension-boundary updates:
+  JavaScript suite 62/62; Rust suite 20/20 plus clippy; installer rebuilt 2026-08-29.
 
 Save/search/history/backup/restore/link and ingestion correctness are covered by native
 tests. The updated installed build passed 7/7 copied-vault UI checks on 2026-07-27;
