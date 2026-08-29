@@ -3,14 +3,14 @@
 | # | Area | Current state | Next concrete work |
 |---|---|---|---|
 | 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible workflow spec; native copy/verify API with manifest and safe rollback | Cancel/progress journal and first-run migration UI |
-| 2 | Attachments | Inventory, safe preservation, import preview, drop-path hint | Native byte upload/drop adapter and attachment preview |
+| 2 | Attachments | Inventory, safe preservation, import preview, native ingestion preservation, drop-path hint, reveal action | Native byte upload/drop adapter and inline attachment previews |
 | 3 | Kanban | Markdown task board, persistent filters, drag-to-review status proposals | Saved boards and richer status vocabulary |
 | 4 | Canvas/mind map | Read-only Canvas, generated mind map, reviewed branch proposals, SVG export | Full interactive layout editing with proposal model |
-| 5 | Property/database views | Frontmatter cards/table, persistent query/view | Saved views, sorting, grouping, typed values |
-| 6 | Extensions | Read-only MCP/API and permission contract | Install/enable UI, signed manifests, adversarial tests |
+| 5 | Property/database views | Frontmatter cards/table, persistent query/view, deterministic sort/group utility | Wire saved sort/group controls into UI and add typed values |
+| 6 | Extensions | Read-only MCP/API, permission contract, capability tests | Install/enable UI, signed manifests, adversarial runtime tests |
 | 7 | Publishing | Boundary and safety design documented; safe selected-note static HTML export API | In-app preview, relative link rewriting, attachment selection, and export archive packaging |
 | 8 | Backup | Verified snapshots and safe restore; retention plan plus explicitly confirmed prune API | Scheduler, retention UI, encryption, and restore drills |
-| 9 | Diagnostics | Privacy-safe diagnostics export | Attach validation logs and redaction tests |
-| 10 | Evidence | 49 JS tests, 20 Rust tests, clippy pass | Human sessions, accessibility, large-workspace and cross-platform evidence |
+| 9 | Diagnostics | Privacy-safe diagnostics export without note contents | Attach validation logs and add automated redaction tests |
+| 10 | Evidence | 56 JS tests, 20 Rust tests, clippy pass | Human sessions, accessibility, large-workspace and cross-platform evidence |
 
 Items marked as current state are implemented and validated to the extent stated. The next-work column is intentionally not marked complete until code and evidence exist.
