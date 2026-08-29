@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlowchart, renderMarkdownPreview } from "../public/workspace-ui.js";
+import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlowchart, renderMarkdownPreview, sanitizeDiagnostics } from "../public/workspace-ui.js";
 
 test("file tree groups folders deterministically without changing paths", () => {
   const tree = buildFileTree(["Root.md", "Projects/B.md", "Projects/A.md", "Daily/2026.md"]);
@@ -19,6 +19,15 @@ test("safe preview supports callouts and wikilinks while escaping active HTML", 
 
 test("local settings reject traversal and clamp editor size", () => {
   assert.deepEqual(normalizeSettings({ dailyFolder: "../bad", folderNoteName: "bad/name", editorFontSize: 99 }), { dailyFolder: "Daily", folderNoteName: "_index", editorFontSize: 24, theme: "dark" });
+});
+
+test("diagnostics redaction excludes note contents and full local paths", () => {
+  const result = sanitizeDiagnostics({ workspace: "C:\\Users\\Barry\\Private Vault", notePath: "Projects\\Secret.md", openTabs: ["Projects\\Secret.md", "Daily\\2026-08-29.md"], dirty: true });
+  assert.equal(result.workspaceName, "Private Vault");
+  assert.deepEqual(result.openTabs, ["Secret.md", "2026-08-29.md"]);
+  assert.equal(result.noteName, "Secret.md");
+  assert.equal(Object.hasOwn(result, "content"), false);
+  assert.equal(Object.hasOwn(result, "workspace"), false);
 });
 
 test("rich preview renders tables tasks footnotes and math without execution", () => {

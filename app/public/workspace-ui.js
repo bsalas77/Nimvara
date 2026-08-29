@@ -79,3 +79,19 @@ export function normalizeSettings(input = {}) {
   const theme = ["dark", "light", "high-contrast"].includes(String(input.theme)) ? String(input.theme) : "dark";
   return { dailyFolder: safePath(input.dailyFolder, "Daily"), folderNoteName: /^[A-Za-z0-9 _-]+$/.test(String(input.folderNoteName || "_index")) ? String(input.folderNoteName || "_index") : "_index", editorFontSize: Math.max(12, Math.min(24, Number(input.editorFontSize) || 16)), theme };
 }
+
+export function sanitizeDiagnostics(input = {}) {
+  const value = input && typeof input === "object" ? input : {};
+  const redactPath = (candidate) => String(candidate ?? "").replaceAll("\\", "/").split("/").at(-1) || null;
+  return {
+    schema: 1,
+    generatedAt: value.generatedAt ?? new Date().toISOString(),
+    app: value.app ?? "Nimvara",
+    workspaceName: redactPath(value.workspace),
+    userAgent: value.userAgent ?? "",
+    openTabs: Array.isArray(value.openTabs) ? value.openTabs.map(redactPath).filter(Boolean) : [],
+    noteName: redactPath(value.notePath),
+    dirty: Boolean(value.dirty),
+    compatibility: value.lastCompatibilityReport ?? null
+  };
+}
