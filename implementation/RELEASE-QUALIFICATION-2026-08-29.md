@@ -17,6 +17,7 @@ The private repository now includes a manually dispatched `macOS build` workflow
 `macos-14`. It runs the same JavaScript and Rust qualification gates, then builds an
 unsigned DMG and publishes a SHA-256 checksum as a workflow artifact. The first run
 exposed a POSIX temporary-directory canonicalization defect; that is fixed in commit
-`025e37e`. Run `33236275476` was dispatched from that commit and was still in native
-qualification at the time of this record; the hosted result remains the authoritative
-macOS gate. No macOS hardware or signed/notarized artifact is claimed here.
+`025e37e`. Run `33236275476` completed successfully and produced `Nimvara_0.7.0_aarch64.dmg`
+with SHA-256 `e081e8c15d34d30ab646dee1c6b8c736ddb1357506171f86518e1e2193c70987`.
+This qualifies the hosted Apple Silicon build path; it is still unsigned/notarized and
+does not qualify Intel macOS or macOS hardware-specific behavior.
