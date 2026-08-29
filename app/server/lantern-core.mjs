@@ -194,9 +194,10 @@ export async function atomicWriteForTest(filePath, data, beforeRename) {
 
 async function checkpoint(root, relative, data, reason) {
   if (data === null) return null;
+  const canonical = await canonicalRoot(root);
   const id = `${new Date().toISOString().replaceAll(":", "-")}-${randomUUID().slice(0, 8)}`;
-  const directory = path.join(root, HISTORY, id);
-  await rejectLinkedComponents(root, directory);
+  const directory = path.join(canonical, HISTORY, id);
+  await rejectLinkedComponents(canonical, directory);
   const contentPath = path.join(directory, ...relative.split("/"));
   await mkdir(path.dirname(contentPath), { recursive: true });
   await writeFile(contentPath, data);
@@ -436,8 +437,9 @@ function isInside(parent, candidate) {
 }
 
 export async function createSnapshot(root, destination) {
+  const sourceRoot = await canonicalRoot(root);
   const destRoot = await canonicalRoot(destination, true);
-  if (isInside(root, destRoot) || isInside(destRoot, root)) {
+  if (isInside(sourceRoot, destRoot) || isInside(destRoot, sourceRoot)) {
     throw new NimvaraError("UNSAFE_DESTINATION", "Backup destination must be separate from the workspace.");
   }
   const snapshotRoot = path.join(destRoot, SNAPSHOT_FOLDER);
@@ -447,9 +449,9 @@ export async function createSnapshot(root, destination) {
   const finalPath = path.join(snapshotRoot, id);
   const filesRoot = path.join(temporary, "files");
   await mkdir(filesRoot, { recursive: true });
-  const manifest = { schema: 1, id, createdAt: new Date().toISOString(), source: root, files: [] };
+  const manifest = { schema: 1, id, createdAt: new Date().toISOString(), source: sourceRoot, files: [] };
   try {
-    for (const file of await walk(root)) {
+    for (const file of await walk(sourceRoot)) {
       if (file.relative.startsWith(`${META}/`)) continue;
       const data = await readFile(file.absolute);
       const output = path.join(filesRoot, ...file.relative.split("/"));
