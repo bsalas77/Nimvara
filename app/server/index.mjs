@@ -14,6 +14,7 @@ import {
   listWorkspaceFiles,
   migrateWorkspace,
   noteContext,
+  planRename,
   exportStatic,
   readAttachmentPreview,
   planSnapshotPrune,
@@ -142,6 +143,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/note-context") return send(response, 200, await noteContext(requireWorkspace(), url.searchParams.get("path")));
     if (request.method === "GET" && url.pathname === "/api/link-diagnostics") return send(response, 200, await buildLinkIndex(requireWorkspace()));
     if (request.method === "GET" && url.pathname === "/api/file") return send(response, 200, await readMarkdown(requireWorkspace(), url.searchParams.get("path")));
+    if (request.method === "POST" && url.pathname === "/api/file/rename-plan") { const input = await body(request); return send(response, 200, await planRename(requireWorkspace(), input.from, input.to)); }
     if (request.method === "PUT" && url.pathname === "/api/file") {
       const input = await body(request);
       return send(response, 200, await saveMarkdown(requireWorkspace(), input.path, input.content, input.expectedHash ?? null));

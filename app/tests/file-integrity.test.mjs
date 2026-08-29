@@ -13,6 +13,7 @@ import {
   listSnapshots,
   migrateWorkspace,
   planSnapshotPrune,
+  planRename,
   pruneSnapshots,
   readMarkdown,
   readAttachmentPreview,
@@ -60,6 +61,18 @@ test("stale expected hash blocks conflicting writes and preserves external bytes
     (error) => error instanceof NimvaraError && error.code === "EXTERNAL_CHANGE"
   );
   assert.equal(await readFile(path.join(f.workspace, "Conflict.md"), "utf8"), "external edit");
+});
+
+test("rename planning identifies wikilink and embed changes without writing", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  const original = Buffer.from("# Target\n");
+  await writeFile(path.join(f.workspace, "Target.md"), original);
+  await writeFile(path.join(f.workspace, "Index.md"), "See [[Target]] and ![[Target|source]].\n");
+  const plan = await planRename(f.workspace, "Target.md", "Renamed.md");
+  assert.deepEqual(plan.affectedFiles, ["Index.md"]);
+  assert.match(plan.changes[0].after, /\[\[Renamed\]\].*!\[\[Renamed\|source\]\]/);
+  assert.deepEqual(await readFile(path.join(f.workspace, "Target.md")), original);
+  await assert.rejects(readFile(path.join(f.workspace, "Renamed.md")), (error) => error.code === "ENOENT");
 });
 
 test("interruption before atomic rename preserves old file and removes temporary file", async (t) => {

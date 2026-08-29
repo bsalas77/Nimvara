@@ -264,6 +264,28 @@ export async function searchMarkdown(root, query) {
   return results;
 }
 
+export async function planRename(root, from, to) {
+  const source = safeRelative(from);
+  const target = safeRelative(to);
+  if (source === target) throw new NimvaraError("RENAME_SAME", "The note already has that name.");
+  if (!(await stat(path.join((await canonicalRoot(root)), ...source.split("/"))).catch(() => null))?.isFile()) throw new NimvaraError("NOTE_NOT_FOUND", "The source note was not found.", 404);
+  if (await stat(path.join((await canonicalRoot(root)), ...target.split("/"))).catch(() => null)) throw new NimvaraError("RENAME_EXISTS", "The destination note already exists.", 409);
+  const oldTarget = source.replace(/\.md$/i, "");
+  const newTarget = target.replace(/\.md$/i, "");
+  const changes = [];
+  for (const relative of await listMarkdown(root)) {
+    const absolute = path.join(await canonicalRoot(root), ...relative.split("/"));
+    const content = await readFile(absolute, "utf8");
+    const updated = content
+      .replaceAll(`[[${oldTarget}]]`, `[[${newTarget}]]`)
+      .replaceAll(`[[${oldTarget}|`, `[[${newTarget}|`)
+      .replaceAll(`![[${oldTarget}]]`, `![[${newTarget}]]`)
+      .replaceAll(`![[${oldTarget}|`, `![[${newTarget}|`);
+    if (updated !== content) changes.push({ path: relative, before: content, after: updated });
+  }
+  return { source, target, changes, affectedFiles: changes.map((change) => change.path), writeRequired: true, reviewRequired: true };
+}
+
 export function parseMarkdownStructure(content) {
   const headings = [];
   const wikilinks = [];

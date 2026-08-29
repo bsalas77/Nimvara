@@ -33,6 +33,7 @@ export const api = {
   files: () => request<string[]>("/api/files"),
   workspaceFiles: () => request<WorkspaceFile[]>("/api/workspace-files"),
   note: (path: string) => request<Note>(`/api/file?path=${encodeURIComponent(path)}`),
+  renamePlan: (from: string, to: string) => request<{ source: string; target: string; affectedFiles: string[]; changes: Array<{ path: string; before: string; after: string }>; reviewRequired: boolean }>("/api/file/rename-plan", { method: "POST", body: JSON.stringify({ from, to }) }),
   save: (path: string, content: string, expectedHash: string | null) => request<{ hash: string; unchanged: boolean }>("/api/file", { method: "PUT", body: JSON.stringify({ path, content, expectedHash }) }),
   search: (query: string) => request<SearchResult[]>("/api/search", { method: "POST", body: JSON.stringify({ query }) }),
   history: (path: string) => request<Checkpoint[]>(`/api/history?path=${encodeURIComponent(path)}`),
