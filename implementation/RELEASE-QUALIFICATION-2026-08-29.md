@@ -8,6 +8,7 @@ The current Windows build was requalified after the latest safety and usability 
 - Windows installer rebuild: passed.
 - Installer artifacts: `dist/Nimvara-Setup-0.7.0-dev.exe` and root `Nimvara-Setup.exe`.
 - Latest installer rebuild after migration/preview UI changes: passed; both artifacts are 4,724,224 bytes with SHA-256 `DF1A4F99AB761B2A9A2191FB7C89773BBE8022020294AFB3B3BC212F6E9CEA93`.
+- Hosted CI run `33237942586` completed successfully after the `h2 0.4.16` security update. Its Windows artifact is 4,713,472 bytes with SHA-256 `88ed4f83313ad4f7b33269f229960365ccf42f8d59c5da66be05982dc3e59c85`.
 
 This validates the current engineering baseline; it does not close the unresolved Linux/macOS, accessibility, large-vault, signing, or clean-machine upgrade gates.
 
