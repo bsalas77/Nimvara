@@ -270,8 +270,16 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
     }
     for note in &dashboard.notes {
         if let Ok(context) = note_context(root, &note.path) {
-            report.broken_links += context.outgoing.iter().filter(|link| link.status == "missing").count();
-            report.ambiguous_links += context.outgoing.iter().filter(|link| link.status == "ambiguous").count();
+            report.broken_links += context
+                .outgoing
+                .iter()
+                .filter(|link| link.status == "missing")
+                .count();
+            report.ambiguous_links += context
+                .outgoing
+                .iter()
+                .filter(|link| link.status == "ambiguous")
+                .count();
         }
     }
     Ok(report)
