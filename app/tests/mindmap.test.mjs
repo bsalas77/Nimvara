@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { layoutMindMap, parseMindMap } from "../public/mindmap.js";
+import { layoutMindMap, parseMindMap, proposeCanvasNodeMove } from "../public/mindmap.js";
 
 test("mind map derives branches from Markdown without changing source", () => {
   const markdown = "# Plan\n## Research\n- Interview\n  - Synthesize\n## Build\n";
@@ -25,4 +25,14 @@ test("mind map layout is deterministic and keeps every node reachable", () => {
   assert.deepEqual(first, second);
   assert.equal(first.edges.length, first.nodes.length - 1);
   assert.ok(first.width >= 720 && first.height >= 360);
+});
+
+test("canvas moves produce reviewable JSON proposals without mutating source", () => {
+  const source = JSON.stringify({ nodes: [{ id: "a", x: 1, y: 2 }], edges: [] });
+  const proposal = proposeCanvasNodeMove(source, "a", 120, 240);
+  assert.deepEqual(JSON.parse(source).nodes[0], { id: "a", x: 1, y: 2 });
+  assert.deepEqual(proposal.before, { x: 1, y: 2 });
+  assert.deepEqual(proposal.after, { x: 120, y: 240 });
+  assert.throws(() => proposeCanvasNodeMove(source, "missing", 0, 0), /not found/);
+  assert.throws(() => proposeCanvasNodeMove(source, "a", 1e9, 0), /out of bounds/);
 });

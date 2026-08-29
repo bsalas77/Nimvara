@@ -46,3 +46,16 @@ export function layoutMindMap(root) {
   visit(root, 0);
   return { nodes, edges, width: Math.max(720, 280 + Math.max(...nodes.map((node) => node.depth)) * 230), height: Math.max(360, 72 + nodes.length * 64) };
 }
+
+export function proposeCanvasNodeMove(canvasJson, nodeId, x, y) {
+  let document;
+  try { document = JSON.parse(String(canvasJson)); } catch { throw new Error("Canvas source is not valid JSON."); }
+  if (!document || !Array.isArray(document.nodes)) throw new Error("Canvas source has no node list.");
+  const node = document.nodes.find((item) => String(item.id) === String(nodeId));
+  if (!node) throw new Error("Canvas node was not found.");
+  const nextX = Number(x), nextY = Number(y);
+  if (!Number.isFinite(nextX) || !Number.isFinite(nextY) || Math.abs(nextX) > 100000 || Math.abs(nextY) > 100000) throw new Error("Canvas coordinates are out of bounds.");
+  const before = { x: node.x, y: node.y };
+  node.x = nextX; node.y = nextY;
+  return { content: `${JSON.stringify(document, null, 2)}\n`, before, after: { x: nextX, y: nextY }, nodeId: String(nodeId) };
+}
