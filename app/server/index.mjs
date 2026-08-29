@@ -109,7 +109,7 @@ export const server = createServer(async (request, response) => {
       response.writeHead(200, { "content-type": types[path.extname(name)], "cache-control": "no-store" });
       return response.end(data);
     }
-    if (request.method === "GET" && url.pathname === "/api/status") return send(response, 200, { workspace, sampleWorkspace, version: "0.4.0-dev", ingestion: ingestionCapabilities, watchMode });
+    if (request.method === "GET" && url.pathname === "/api/status") return send(response, 200, { workspace, sampleWorkspace, version: "0.7.0-dev", ingestion: ingestionCapabilities, watchMode });
     if (request.method === "GET" && url.pathname === "/api/events") {
       response.writeHead(200, {
         "content-type": "text/event-stream; charset=utf-8",

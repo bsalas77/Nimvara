@@ -18,3 +18,10 @@ test("extension capability contract documents local API and guarded AI", async (
   assert.match(doc, /never write directly to the workspace/);
   assert.match(doc, /checkpointed Save path/);
 });
+
+test("release surfaces use the packaged development version", async () => {
+  const server = await readFile(path.join(root, "server", "index.mjs"), "utf8");
+  const launcher = await readFile(path.join(root, "server", "desktop-launcher.mjs"), "utf8");
+  assert.match(server, /version: "0\.7\.0-dev"/);
+  assert.match(launcher, /version = "0\.7\.0-dev"/);
+});
