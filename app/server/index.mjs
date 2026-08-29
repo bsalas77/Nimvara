@@ -43,6 +43,22 @@ import { validateExtensionManifest } from "./extension-manifest.mjs";
 let workspace = null;
 let workspaceWatcher = null;
 let backupSchedule = normalizeBackupSchedule();
+let backupTimer = null;
+let backupLastRun = null;
+let backupRunning = false;
+
+function scheduleBackupTimer() {
+  if (backupTimer) clearInterval(backupTimer);
+  backupTimer = null;
+  if (!backupSchedule.enabled || !workspace) return;
+  backupTimer = setInterval(async () => {
+    if (backupRunning) return;
+    backupRunning = true;
+    try { const snapshot = await createSnapshot(workspace, backupSchedule.destination); backupLastRun = { status: "success", completedAt: new Date().toISOString(), snapshot: snapshot.id }; }
+    catch (error) { backupLastRun = { status: "failed", completedAt: new Date().toISOString(), code: error.code || "BACKUP_FAILED", message: error.message }; }
+    finally { backupRunning = false; }
+  }, backupSchedule.intervalMinutes * 60_000);
+}
 let watchMode = "inactive";
 let watchTimer = null;
 const watchClients = new Set();
@@ -131,6 +147,7 @@ export const server = createServer(async (request, response) => {
       const input = await body(request);
       workspace = await canonicalRoot(input.path, Boolean(input.create));
       startWorkspaceWatcher(workspace);
+      scheduleBackupTimer();
       return send(response, 200, { workspace, files: await listMarkdown(workspace) });
     }
     if (request.method === "GET" && url.pathname === "/api/files") return send(response, 200, await listMarkdown(requireWorkspace()));
@@ -175,8 +192,8 @@ export const server = createServer(async (request, response) => {
       return send(response, 200, await createSnapshot(requireWorkspace(), input.destination));
     }
     if (request.method === "GET" && url.pathname === "/api/snapshots") return send(response, 200, await listSnapshots(url.searchParams.get("destination")));
-    if (request.method === "GET" && url.pathname === "/api/snapshots/schedule") return send(response, 200, backupSchedule);
-    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); return send(response, 200, backupSchedule); }
+    if (request.method === "GET" && url.pathname === "/api/snapshots/schedule") return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun });
+    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); scheduleBackupTimer(); return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun }); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
