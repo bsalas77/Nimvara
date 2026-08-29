@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createDailyNote, dailyNotePath, filterRecords, parseFrontmatter, parseTasks, proposeKanbanMove, proposeMindMapChild, proposePropertyEdit, proposeTaskToggle } from "../public/productivity.js";
+import { createDailyNote, dailyNotePath, filterRecords, organizeRecords, parseFrontmatter, parseTasks, proposeKanbanMove, proposeMindMapChild, proposePropertyEdit, proposeTaskToggle } from "../public/productivity.js";
 
 test("daily notes use stable local dates and ordinary Markdown", () => {
   const date = new Date(2026, 7, 1, 23, 59);
@@ -23,6 +23,17 @@ test("frontmatter views filter predictable scalar properties", () => {
   const second = { path: "B.md", properties: parseFrontmatter("---\ntype: person\nstatus: active\n---") };
   assert.deepEqual(first.properties, { type: "project", status: "active" });
   assert.deepEqual(filterRecords([first, second], "type:project active").map((item) => item.path), ["A.md"]);
+});
+
+test("property records sort and group deterministically without changing source data", () => {
+  const records = [
+    { path: "B.md", properties: { status: "done", priority: "2" } },
+    { path: "A.md", properties: { status: "open", priority: "10" } },
+    { path: "C.md", properties: { status: "done", priority: "1" } },
+  ];
+  assert.deepEqual(organizeRecords(records, "priority").map((record) => record.path), ["C.md", "B.md", "A.md"]);
+  assert.deepEqual(organizeRecords(records, "path", "status").map((record) => record.path), ["B.md", "C.md", "A.md"]);
+  assert.equal(records[0].properties.priority, "2");
 });
 
 test("visual map edits create a reviewable Markdown proposal", () => {

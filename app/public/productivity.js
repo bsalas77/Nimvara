@@ -41,6 +41,12 @@ export function filterRecords(records, query) {
   }));
 }
 
+export function organizeRecords(records, sortKey = "path", groupKey = "") {
+  const output = [...records].sort((a, b) => String(a.properties?.[sortKey] ?? a[sortKey] ?? "").localeCompare(String(b.properties?.[sortKey] ?? b[sortKey] ?? ""), undefined, { numeric: true, sensitivity: "base" }));
+  if (!groupKey) return output;
+  return output.sort((a, b) => String(a.properties?.[groupKey] ?? "").localeCompare(String(b.properties?.[groupKey] ?? ""), undefined, { sensitivity: "base" }));
+}
+
 export function proposeMindMapChild(content, node, label) {
   const clean = String(label).replace(/[\r\n]+/g, " ").trim();
   if (!clean) throw new Error("Branch text is required.");
