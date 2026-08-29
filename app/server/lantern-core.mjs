@@ -119,6 +119,40 @@ export async function listWorkspaceFiles(root) {
   return output.sort((a, b) => a.path.localeCompare(b.path));
 }
 
+export async function migrateWorkspace(sourcePath, destinationPath) {
+  const source = path.resolve(String(sourcePath));
+  const destination = path.resolve(String(destinationPath));
+  if (source === destination || destination.startsWith(`${source}${path.sep}`)) throw new NimvaraError("MIGRATION_DESTINATION", "Migration destination must be outside the source vault.");
+  const sourceInfo = await lstat(source).catch(() => null);
+  if (!sourceInfo?.isDirectory() || sourceInfo.isSymbolicLink()) throw new NimvaraError("MIGRATION_SOURCE", "Migration source must be an existing, non-symlink folder.");
+  await access(source, constants.R_OK);
+  const existingDestination = await lstat(destination).catch(() => null);
+  if (existingDestination) throw new NimvaraError("MIGRATION_DESTINATION", "Migration destination must not already exist; choose a new empty path.");
+  await mkdir(destination, { recursive: false });
+  const entries = await walk(source);
+  const manifest = [];
+  try {
+    for (const entry of entries) {
+      const relative = entry.relative.replaceAll("\\", "/");
+      if (relative === META || relative.startsWith(`${META}/`)) continue;
+      const target = path.join(destination, ...relative.split("/"));
+      await mkdir(path.dirname(target), { recursive: true });
+      const bytes = await readFile(entry.absolute);
+      await writeFile(target, bytes, { flag: "wx" });
+      const hash = sha256(bytes);
+      const verified = sha256(await readFile(target));
+      if (hash !== verified) throw new NimvaraError("MIGRATION_VERIFY", `Copied file failed verification: ${relative}`);
+      manifest.push({ path: relative, bytes: bytes.length, sha256: hash });
+    }
+    const report = { schema: 1, source, destination, createdAt: new Date().toISOString(), files: manifest };
+    await writeFile(path.join(destination, ".nimvara-migration.json"), JSON.stringify(report, null, 2), { flag: "wx" });
+    return report;
+  } catch (error) {
+    await rm(destination, { recursive: true, force: true });
+    throw error;
+  }
+}
+
 export async function readMarkdown(root, relative) {
   const target = await resolveInside(root, relative);
   const data = await readFile(target.absolute);

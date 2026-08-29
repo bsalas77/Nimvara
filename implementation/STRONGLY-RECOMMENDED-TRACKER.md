@@ -2,7 +2,7 @@
 
 | # | Area | Current state | Next concrete work |
 |---|---|---|---|
-| 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible workflow spec | Native copy/verify/cancel journal and manifest UI |
+| 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible workflow spec; native copy/verify API with manifest and safe rollback | Cancel/progress journal and first-run migration UI |
 | 2 | Attachments | Inventory, safe preservation, import preview, drop-path hint | Native byte upload/drop adapter and attachment preview |
 | 3 | Kanban | Markdown task board, persistent filters | Drag-to-review status proposals and saved boards |
 | 4 | Canvas/mind map | Read-only Canvas, generated mind map, reviewed branch proposals, SVG export | Full interactive layout editing with proposal model |

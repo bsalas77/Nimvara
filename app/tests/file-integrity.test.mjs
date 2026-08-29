@@ -9,10 +9,12 @@ import {
   canonicalRoot,
   createSnapshot,
   listHistory,
+  migrateWorkspace,
   readMarkdown,
   restoreHistory,
   restoreSnapshot,
   saveMarkdown,
+  sha256,
   searchMarkdown,
   verifySnapshot
 } from "../server/lantern-core.mjs";
@@ -99,6 +101,44 @@ test("snapshot corruption is detected and unsafe destinations are rejected", asy
   const snapshot = await createSnapshot(f.workspace, f.backups);
   await writeFile(path.join(snapshot.path, "files", "Note.md"), "tampered");
   await assert.rejects(verifySnapshot(snapshot.path), (error) => error.code === "SNAPSHOT_CORRUPT");
+});
+
+test("workspace migration copies bytes, excludes private metadata, and writes a verification manifest", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await mkdir(path.join(f.workspace, "Attachments", "日本語"), { recursive: true });
+  const original = Buffer.from("# Café 🏮\r\n", "utf8");
+  const attachment = Buffer.from([0, 1, 2, 255]);
+  await writeFile(path.join(f.workspace, "Résumé.md"), original);
+  await writeFile(path.join(f.workspace, "Attachments", "日本語", "artifact.bin"), attachment);
+  await mkdir(path.join(f.workspace, ".lantern"));
+  await writeFile(path.join(f.workspace, ".lantern", "private.json"), "must not migrate");
+  const destination = path.join(f.root, "Migrated");
+  const report = await migrateWorkspace(f.workspace, destination);
+  assert.equal(report.files.length, 2);
+  assert.deepEqual(await readFile(path.join(destination, "Résumé.md")), original);
+  assert.deepEqual(await readFile(path.join(destination, "Attachments", "日本語", "artifact.bin")), attachment);
+  await assert.rejects(readFile(path.join(destination, ".lantern", "private.json")), (error) => error.code === "ENOENT");
+  const manifest = JSON.parse(await readFile(path.join(destination, ".nimvara-migration.json"), "utf8"));
+  assert.deepEqual(manifest.files.map((file) => file.path).sort(), ["Attachments/日本語/artifact.bin", "Résumé.md"]);
+  assert.equal(manifest.files.find((file) => file.path === "Résumé.md").sha256, sha256(original));
+  assert.deepEqual(await readFile(path.join(f.workspace, "Résumé.md")), original);
+  assert.deepEqual(await readFile(path.join(f.workspace, "Attachments", "日本語", "artifact.bin")), attachment);
+});
+
+test("workspace migration rejects an existing destination and never removes it", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await writeFile(path.join(f.workspace, "Note.md"), "source");
+  const destination = path.join(f.root, "Existing");
+  await mkdir(destination);
+  await writeFile(path.join(destination, "keep.txt"), "keep me");
+  await assert.rejects(migrateWorkspace(f.workspace, destination), (error) => error.code === "MIGRATION_DESTINATION");
+  assert.equal(await readFile(path.join(destination, "keep.txt"), "utf8"), "keep me");
+});
+
+test("workspace migration rejects destinations inside the source vault", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await writeFile(path.join(f.workspace, "Note.md"), "source");
+  await assert.rejects(migrateWorkspace(f.workspace, path.join(f.workspace, "Nested")), (error) => error.code === "MIGRATION_DESTINATION");
 });
 
 test("workspace escape and non-Markdown edit attempts are rejected", async (t) => {

@@ -4,6 +4,8 @@ export type Checkpoint = { id: string; path: string; hash: string; reason: strin
 export type Snapshot = { id: string; path: string; createdAt?: string; verified: boolean; files?: unknown[] };
 export type SafetyState = { workspace: { status: string; path: string }; localSave: string; externalChange: string; sync: string; backup: string; checkpoint: string; checkpointCount: number; watchMode: string; signature: string; note: { path: string; hash: string; modifiedAt: string; missing?: boolean } | null; recovery: { reload: boolean; restoreCheckpoint: boolean; saveCopy: boolean } };
 export type WorkspaceFile = { path: string; kind: "markdown" | "attachment"; extension: string; bytes: number; modifiedAt: string };
+export type MigrationFile = { path: string; bytes: number; sha256: string };
+export type MigrationReport = { schema: number; source: string; destination: string; createdAt: string; files: MigrationFile[] };
 
 export class ApiError extends Error {
   code: string;
@@ -38,5 +40,6 @@ export const api = {
   snapshot: (destination: string) => request<Snapshot>("/api/snapshots", { method: "POST", body: JSON.stringify({ destination }) }),
   snapshots: (destination: string) => request<Snapshot[]>(`/api/snapshots?destination=${encodeURIComponent(destination)}`),
   restoreSnapshot: (snapshotPath: string, destination: string) => request<{ destination: string; files: number; verified: boolean }>("/api/snapshots/restore", { method: "POST", body: JSON.stringify({ snapshotPath, destination }) }),
+  migrateWorkspace: (source: string, destination: string) => request<MigrationReport>("/api/migration/copy", { method: "POST", body: JSON.stringify({ source, destination }) }),
   safety: (path?: string | null) => request<SafetyState>(`/api/safety${path ? `?path=${encodeURIComponent(path)}` : ""}`)
 };
