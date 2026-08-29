@@ -12,6 +12,7 @@ import {
   listHistory,
   listSnapshots,
   migrateWorkspace,
+  normalizeBackupSchedule,
   planSnapshotPrune,
   planRename,
   applyRename,
@@ -42,6 +43,14 @@ test("opening and reading is byte-lossless", async (t) => {
   const note = await readMarkdown(f.workspace, "Résumé 日本語.md");
   assert.equal(note.content, bytes.toString("utf8"));
   assert.deepEqual(await readFile(path.join(f.workspace, "Résumé 日本語.md")), bytes);
+});
+
+test("backup schedules are bounded and require an external destination", () => {
+  assert.throws(() => normalizeBackupSchedule({ enabled: true }), (error) => error.code === "INVALID_BACKUP_SCHEDULE");
+  const schedule = normalizeBackupSchedule({ enabled: true, intervalMinutes: 1, destination: "D:/Backups" });
+  assert.equal(schedule.intervalMinutes, 15);
+  assert.match(schedule.nextRunAt, /^20/);
+  assert.deepEqual(normalizeBackupSchedule({ enabled: false }), { enabled: false, intervalMinutes: 60, destination: "", nextRunAt: null });
 });
 
 test("Unicode and long nested Markdown paths save and search", async (t) => {

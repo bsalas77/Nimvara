@@ -34,6 +34,14 @@ export function sha256(data) {
   return createHash("sha256").update(data).digest("hex");
 }
 
+export function normalizeBackupSchedule(input = {}) {
+  const enabled = Boolean(input.enabled);
+  const intervalMinutes = Math.min(10080, Math.max(15, Number(input.intervalMinutes) || 60));
+  const destination = typeof input.destination === "string" ? input.destination.trim() : "";
+  if (enabled && !destination) throw new NimvaraError("INVALID_BACKUP_SCHEDULE", "An external backup destination is required when scheduling is enabled.");
+  return { enabled, intervalMinutes, destination, nextRunAt: enabled ? new Date(Date.now() + intervalMinutes * 60_000).toISOString() : null };
+}
+
 export function safeRelative(input) {
   if (typeof input !== "string" || !input.trim()) {
     throw new NimvaraError("INVALID_PATH", "A relative Markdown path is required.");

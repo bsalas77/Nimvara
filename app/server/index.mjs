@@ -14,6 +14,7 @@ import {
   listWorkspaceFiles,
   migrateWorkspace,
   noteContext,
+  normalizeBackupSchedule,
   planRename,
   applyRename,
   exportStatic,
@@ -41,6 +42,7 @@ import { validateExtensionManifest } from "./extension-manifest.mjs";
 
 let workspace = null;
 let workspaceWatcher = null;
+let backupSchedule = normalizeBackupSchedule();
 let watchMode = "inactive";
 let watchTimer = null;
 const watchClients = new Set();
@@ -173,6 +175,8 @@ export const server = createServer(async (request, response) => {
       return send(response, 200, await createSnapshot(requireWorkspace(), input.destination));
     }
     if (request.method === "GET" && url.pathname === "/api/snapshots") return send(response, 200, await listSnapshots(url.searchParams.get("destination")));
+    if (request.method === "GET" && url.pathname === "/api/snapshots/schedule") return send(response, 200, backupSchedule);
+    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); return send(response, 200, backupSchedule); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
