@@ -3,7 +3,9 @@ import { createDailyNote, dailyNotePath, filterRecords, parseFrontmatter, propos
 import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlowchart, renderMarkdownPreview } from "./workspace-ui.js";
 
 const $ = (id) => document.getElementById(id);
-let workspace = null, files = [], note = null, dirty = false, ingestionPreview = null, aiProposal = null, diskConflict = null, workspaceSignature = null, workspaceEvents = null, recoveryTimer = null, currentContext = null, selectedMapNode = null, mapEditProposal = null, taskChangeProposal = null, propertyEditProposal = null, lastCompatibilityReport = null;
+let workspace = null, files = [], note = null, dirty = false, ingestionPreview = null, aiProposal = null, diskConflict = null, workspaceSignature = null, workspaceEvents = null, recoveryTimer = null, currentContext = null, selectedMapNode = null, mapEditProposal = null, taskChangeProposal = null, propertyEditProposal = null, lastCompatibilityReport = null, openTabs = [];
+const tabsHost = document.createElement("nav"); tabsHost.className = "tabs"; tabsHost.setAttribute("aria-label", "Open notes"); $("notePath").closest(".editorHead").before(tabsHost);
+function rememberTab(path) { openTabs = [path, ...openTabs.filter((item) => item !== path)].slice(0, 8); tabsHost.innerHTML = openTabs.map((item) => `<button class="tab ${item === path ? "active" : ""}" data-open-tab="${encodeURIComponent(item)}">${escapeHtml(item.split("/").at(-1))}</button>`).join(""); tabsHost.querySelectorAll("[data-open-tab]").forEach((button) => button.onclick = () => openNote(decodeURIComponent(button.dataset.openTab))); }
 let settings = normalizeSettings(JSON.parse(localStorage.getItem("nimvara-settings") || "{}"));
 $("workspacePath").value = localStorage.getItem("nimvara-workspace") || localStorage.getItem("lantern-workspace") || "";
 
@@ -71,6 +73,7 @@ async function openWorkspace(create) {
 }
 function renderFiles() { const tree = buildFileTree(files); const renderNode = (node) => `${[...node.folders.values()].map((folder) => `<details open><summary>${escapeHtml(folder.name)}</summary>${renderNode(folder)}</details>`).join("")}${node.files.map((file) => `<button class="file ${note?.path === file.path ? "active" : ""}" data-path="${encodeURIComponent(file.path)}">${escapeHtml(file.name)}</button>`).join("")}`; $("files").innerHTML = renderNode(tree); document.querySelectorAll("[data-path]").forEach((button) => button.onclick = () => openNote(decodeURIComponent(button.dataset.path))); }
 async function openNote(path, force = false) {
+  rememberTab(path);
   if (dirty && !force && !confirm("Discard unsaved edits?")) return;
   try { note = await api(`/api/file?path=${encodeURIComponent(path)}`); $("content").value = note.content; $("notePath").textContent = note.path; setNoteView("edit"); renderProperties(); dirty = false; diskConflict = null; $("save").disabled = true; $("saveState").textContent = "Saved"; $("warning").classList.add("hidden"); $("recovery").classList.add("hidden"); $("compare").classList.add("hidden"); renderFiles(); await Promise.all([renderHistory(), renderContext(), offerRecovery()]); status(`Loaded ${path}`); } catch (reason) { error(reason); }
 }
