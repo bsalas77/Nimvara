@@ -411,6 +411,20 @@ export async function revealWorkspaceFile(root, relative) {
   return { revealed: normalized };
 }
 
+export async function readAttachmentPreview(root, relative) {
+  const normalized = String(relative ?? "").replaceAll("\\", "/").replace(/^\/+/, "");
+  if (!normalized || normalized.split("/").some((part) => !part || part === "." || part === "..") || normalized.toLowerCase().startsWith(`${META}/`)) throw new NimvaraError("INVALID_ATTACHMENT", "Attachment path must stay inside the workspace.");
+  const absolute = path.resolve(root, ...normalized.split("/"));
+  const prefix = root.endsWith(path.sep) ? root : `${root}${path.sep}`;
+  if (!absolute.startsWith(prefix)) throw new NimvaraError("PATH_ESCAPE", "Attachment path escaped the workspace.");
+  const info = await stat(absolute).catch(() => null);
+  if (!info?.isFile()) throw new NimvaraError("ATTACHMENT_NOT_FOUND", "Attachment was not found.", 404);
+  if (info.size > 2 * 1024 * 1024) throw new NimvaraError("PREVIEW_TOO_LARGE", "Attachment preview is limited to 2 MiB.", 413);
+  const mime = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".ogg": "audio/ogg", ".pdf": "application/pdf" }[path.extname(normalized).toLowerCase()];
+  if (!mime) throw new NimvaraError("PREVIEW_UNSUPPORTED", "Inline preview is limited to common images, audio, and PDF files.");
+  return { path: normalized, mime, bytes: info.size, data: (await readFile(absolute)).toString("base64") };
+}
+
 function isInside(parent, candidate) {
   const relative = path.relative(parent, candidate);
   return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));

@@ -15,6 +15,7 @@ import {
   migrateWorkspace,
   noteContext,
   exportStatic,
+  readAttachmentPreview,
   planSnapshotPrune,
   pruneSnapshots,
   readMarkdown,
@@ -152,6 +153,7 @@ export const server = createServer(async (request, response) => {
       const input = await body(request);
       return send(response, 200, await revealWorkspaceFile(requireWorkspace(), input.path));
     }
+    if (request.method === "GET" && url.pathname === "/api/attachment/preview") return send(response, 200, await readAttachmentPreview(requireWorkspace(), url.searchParams.get("path")));
     if (request.method === "POST" && url.pathname === "/api/search") {
       const input = await body(request);
       return send(response, 200, await searchMarkdown(requireWorkspace(), input.query));

@@ -15,6 +15,7 @@ import {
   planSnapshotPrune,
   pruneSnapshots,
   readMarkdown,
+  readAttachmentPreview,
   restoreHistory,
   restoreSnapshot,
   saveMarkdown,
@@ -170,6 +171,17 @@ test("snapshot retention is previewable and requires explicit confirmation", asy
   await assert.rejects(pruneSnapshots(f.backups, 2), (error) => error.code === "CONFIRM_REQUIRED");
   await pruneSnapshots(f.backups, 2, true);
   assert.equal((await listSnapshots(f.backups)).length, 2);
+});
+
+test("attachment preview is bounded and limited to inert media types", async (t) => {
+  const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
+  await mkdir(path.join(f.workspace, "Attachments"));
+  await writeFile(path.join(f.workspace, "Attachments", "photo.png"), Buffer.from([137, 80, 78, 71]));
+  const preview = await readAttachmentPreview(f.workspace, "Attachments/photo.png");
+  assert.equal(preview.mime, "image/png");
+  assert.equal(preview.data, Buffer.from([137, 80, 78, 71]).toString("base64"));
+  await writeFile(path.join(f.workspace, "Attachments", "script.svg"), "<script>alert(1)</script>");
+  await assert.rejects(readAttachmentPreview(f.workspace, "Attachments/script.svg"), (error) => error.code === "PREVIEW_UNSUPPORTED");
 });
 
 test("workspace escape and non-Markdown edit attempts are rejected", async (t) => {
