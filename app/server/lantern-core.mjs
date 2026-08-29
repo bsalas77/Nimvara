@@ -78,10 +78,15 @@ async function rejectLinkedComponents(root, candidate) {
 
 export async function resolveInside(root, relative) {
   const safe = safeRelative(relative);
-  const candidate = path.resolve(root, ...safe.split("/"));
-  const prefix = root.endsWith(path.sep) ? root : `${root}${path.sep}`;
+  // Resolve against the canonical workspace path. macOS temporary directories
+  // are commonly exposed through a symlink (for example /var -> /private/var),
+  // so comparing a lexical path to realpath(root) incorrectly reports every
+  // valid file as escaping the workspace.
+  const canonical = await realpath(root);
+  const candidate = path.resolve(canonical, ...safe.split("/"));
+  const prefix = canonical.endsWith(path.sep) ? canonical : `${canonical}${path.sep}`;
   if (!candidate.startsWith(prefix)) throw new NimvaraError("PATH_ESCAPE", "Path escaped the workspace.");
-  await rejectLinkedComponents(root, candidate);
+  await rejectLinkedComponents(canonical, candidate);
   return { absolute: candidate, relative: safe };
 }
 
