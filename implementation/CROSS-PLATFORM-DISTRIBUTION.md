@@ -18,6 +18,8 @@ tracked migration to Tauri's maintained GTK4 stack when available.
 
 ## macOS desktop
 
+The hosted qualification workflow targets `macos-14`, runs the JavaScript and native Rust gates, and uploads an unsigned `.dmg` artifact. Running it requires pushing the repository to GitHub and manually dispatching `Cross-platform release candidates`; this Windows host cannot execute macOS binaries locally.
+
 Prepared targets: `.app` and `.dmg`, minimum macOS 12:
 
 ```sh

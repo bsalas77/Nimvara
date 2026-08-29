@@ -18,13 +18,16 @@ jobs:
             artifact: app/src-tauri/target/release/bundle/deb/*.deb
             name: nimvara-linux-deb
           - os: macos-14
-            bundle: app
+            bundle: dmg
             config: tauri.macos.conf.json
-            artifact: app/src-tauri/target/release/bundle/macos/*.app
+            artifact: app/src-tauri/target/release/bundle/dmg/*.dmg
             name: nimvara-macos-unsigned
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Run cross-platform JavaScript qualification
+        working-directory: app
+        run: node tests/run-all.mjs
       - name: Install Linux native dependencies
         if: runner.os == 'Linux'
         run: |
@@ -53,6 +56,9 @@ jobs:
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Run cross-platform JavaScript qualification
+        working-directory: app
+        run: node tests/run-all.mjs
       - name: Select pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component clippy,rustfmt
       - name: Run native qualification
