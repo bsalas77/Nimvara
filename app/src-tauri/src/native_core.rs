@@ -1534,7 +1534,7 @@ pub fn export_static(
             let html = format!("<!doctype html><meta charset=\"utf-8\"><title>{}</title><main><h1>{}</h1><pre>{}</pre></main>\n", html_escape(title), html_escape(title), html_escape(&markdown));
             let output_relative = format!("{}.html", relative.trim_end_matches(".md"));
             let output =
-                target.join(output_relative.replace('/', &std::path::MAIN_SEPARATOR.to_string()));
+                target.join(output_relative.replace('/', std::path::MAIN_SEPARATOR_STR));
             if let Some(parent) = output.parent() {
                 fs::create_dir_all(parent).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
             }
