@@ -8,9 +8,9 @@ The current product value is strongest for privacy-conscious individual knowledg
 
 ## Release confidence
 
-**Early-access / technical preview: suitable.** The JavaScript suite passes 66/66, Rust tests pass 20/20, and strict clippy passes. Windows installer and native application work have been exercised, but installed WebView2 automation and Linux/macOS qualification remain incomplete.
+**Early-access / technical preview: suitable.** The JavaScript suite passes 67/67 and the native Rust suite passes 23/23 (one benchmark ignored). Windows installer rebuilds and native application safety paths have been exercised, but clean installed WebView2 automation and Linux/macOS qualification remain incomplete.
 
-**Broad public production release: not yet.** The remaining blockers are complete attachment repair and preview workflows, a complete interactive canvas editor, extension installation and signature verification, polished publishing, encrypted backups/key management, app-closed scheduling, diagnostic redaction evidence, and human/platform validation. Bounded persisted scheduling and explicit run-now snapshots are implemented; they do not constitute encrypted backup or multi-device sync.
+**Broad public production release: not yet.** The remaining blockers are guided attachment repair application, a complete interactive canvas editor, extension installation and signature verification, encrypted backups/key management, app-closed scheduling, diagnostic redaction evidence, and human/platform validation. Safe static publishing, bounded persisted scheduling, explicit retention, and run-now snapshots are implemented; they do not constitute encrypted backup or multi-device sync.
 
 ## Recommended distribution posture
 
