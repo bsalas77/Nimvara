@@ -8,5 +8,6 @@ await import("./typed-properties.test.mjs");
 await import("./workspace-ui.test.mjs");
 await import("./capabilities.test.mjs");
 await import("./extension-registry.test.mjs");
+await import("./attachment-repair.test.mjs");
 await import("./sync.test.mjs");
 await import("./encrypted-snapshot.test.mjs");

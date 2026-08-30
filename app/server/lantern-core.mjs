@@ -464,6 +464,24 @@ export async function attachmentDiagnostics(root) {
   return { diagnostics, attachmentCount: attachments.length };
 }
 
+export async function planAttachmentRepair(root, source, line, target, candidate) {
+  const note = safeRelative(source);
+  const candidatePath = String(candidate || "").replaceAll("\\", "/").replace(/^\.\//, "");
+  if (!candidatePath || candidatePath.startsWith("/") || /^[A-Za-z]:/.test(candidatePath) || candidatePath.split("/").some((part) => !part || part === "..")) throw new NimvaraError("ATTACHMENT_REPAIR", "Replacement path is unsafe.");
+  const candidates = await listWorkspaceFiles(root);
+  if (!candidates.some((item) => item.kind === "attachment" && item.path.toLocaleLowerCase() === candidatePath.toLocaleLowerCase())) throw new NimvaraError("ATTACHMENT_REPAIR", "Replacement must be an existing workspace attachment.");
+  const current = await readFile(path.join(root, ...note.split("/")), "utf8");
+  const lines = current.split(/\r?\n/);
+  const index = Number(line) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= lines.length || !lines[index].includes(String(target))) throw new NimvaraError("ATTACHMENT_REPAIR", "The attachment reference changed; refresh diagnostics.");
+  const relativeCandidate = path.posix.relative(path.posix.dirname(note), candidatePath) || path.posix.basename(candidatePath);
+  const normalized = relativeCandidate.startsWith(".") ? relativeCandidate : `./${relativeCandidate}`;
+  const beforeLine = lines[index];
+  const updatedLine = beforeLine.replace(String(target), normalized);
+  lines[index] = updatedLine;
+  return { source: note, line: Number(line), before: beforeLine, after: updatedLine, content: lines.join("\n"), candidate: candidatePath };
+}
+
 export async function noteContext(root, relative) {
   const safe = safeRelative(relative);
   const index = await buildLinkIndex(root);
