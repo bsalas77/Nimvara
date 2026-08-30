@@ -252,6 +252,7 @@ pub struct CompatibilityReport {
     pub longest_relative_path: usize,
     pub broken_links: usize,
     pub missing_attachments: usize,
+    pub missing_attachment_paths: Vec<String>,
     pub ambiguous_links: usize,
     pub extensions: HashMap<String, usize>,
 }
@@ -293,6 +294,7 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
             .unwrap_or(0),
         broken_links: 0,
         missing_attachments: 0,
+        missing_attachment_paths: Vec::new(),
         ambiguous_links: 0,
         extensions: HashMap::new(),
     };
@@ -330,6 +332,13 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
                 .iter()
                 .filter(|link| link.status == "missing" && link.embed)
                 .count();
+            report.missing_attachment_paths.extend(
+                context
+                    .outgoing
+                    .iter()
+                    .filter(|link| link.status == "missing" && link.embed)
+                    .map(|link| format!("{}:{} -> {}", note.path, link.line, link.target)),
+            );
             report.ambiguous_links += context
                 .outgoing
                 .iter()
