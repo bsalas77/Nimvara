@@ -406,6 +406,15 @@ fn native_prune_snapshots(
 }
 
 #[tauri::command]
+fn native_publishing_export(
+    destination: String,
+    paths: Vec<String>,
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::StaticExportResult, String> {
+    native_core::export_static(&active_root(&state)?, &destination, &paths)
+}
+
+#[tauri::command]
 fn native_restore_snapshot(
     snapshot_path: String,
     destination: String,
@@ -747,6 +756,7 @@ fn main() {
             native_list_snapshots,
             native_snapshot_prune_plan,
             native_prune_snapshots,
+            native_publishing_export,
             native_restore_snapshot,
             native_backup_schedule,
             native_set_backup_schedule,

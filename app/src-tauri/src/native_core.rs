@@ -154,6 +154,14 @@ pub struct SnapshotPrunePlan {
     pub remove: Vec<Snapshot>,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StaticExportResult {
+    pub destination: String,
+    pub files: Vec<String>,
+    pub format: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RestoreResult {
     pub destination: String,
@@ -1463,6 +1471,88 @@ pub fn prune_snapshots(
     plan_snapshot_prune(destination, keep)
 }
 
+fn html_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+pub fn export_static(
+    root: &Path,
+    destination: &str,
+    selected: &[String],
+) -> Result<StaticExportResult, String> {
+    let source = root
+        .canonicalize()
+        .map_err(|error| format!("EXPORT_SOURCE: {error}"))?;
+    let target = PathBuf::from(destination);
+    let intended = canonical_intent(&target)?;
+    if is_inside(&source, &intended) || is_inside(&intended, &source) {
+        return Err(
+            "UNSAFE_DESTINATION: Export destination must be separate from the workspace.".into(),
+        );
+    }
+    if target.exists() {
+        if !target.is_dir()
+            || fs::read_dir(&target)
+                .map_err(|error| format!("EXPORT_DESTINATION: {error}"))?
+                .next()
+                .is_some()
+        {
+            return Err(
+                "EXPORT_DESTINATION: Export destination must be a new or empty folder.".into(),
+            );
+        }
+    } else {
+        fs::create_dir(&target).map_err(|error| format!("EXPORT_DESTINATION: {error}"))?;
+    }
+    let requested: HashSet<String> = selected
+        .iter()
+        .map(|item| clean_snapshot_relative(item).map(|value| value.to_lowercase()))
+        .collect::<Result<_, _>>()?;
+    let mut files = Vec::new();
+    let mut walked = Vec::new();
+    walk_files(&source, &source, &mut walked)?;
+    let result = (|| {
+        for (absolute, relative) in walked {
+            if !relative.to_lowercase().ends_with(".md")
+                || (!requested.is_empty() && !requested.contains(&relative.to_lowercase()))
+            {
+                continue;
+            }
+            let markdown = String::from_utf8(
+                fs::read(&absolute).map_err(|error| format!("EXPORT_READ: {error}"))?,
+            )
+            .map_err(|_| "EXPORT_UTF8: Markdown must be valid UTF-8.".to_string())?;
+            let title = markdown
+                .lines()
+                .find_map(|line| line.strip_prefix("# "))
+                .unwrap_or_else(|| relative.trim_end_matches(".md"));
+            let html = format!("<!doctype html><meta charset=\"utf-8\"><title>{}</title><main><h1>{}</h1><pre>{}</pre></main>\n", html_escape(title), html_escape(title), html_escape(&markdown));
+            let output_relative = format!("{}.html", relative.trim_end_matches(".md"));
+            let output =
+                target.join(output_relative.replace('/', &std::path::MAIN_SEPARATOR.to_string()));
+            if let Some(parent) = output.parent() {
+                fs::create_dir_all(parent).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
+            }
+            fs::write(&output, html).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
+            files.push(relative);
+        }
+        Ok(StaticExportResult {
+            destination: target.to_string_lossy().to_string(),
+            files,
+            format: "safe-static-html-v1".into(),
+        })
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(&target);
+    }
+    result
+}
+
 pub fn restore_snapshot(snapshot_path: &str, destination: &str) -> Result<RestoreResult, String> {
     let snapshot = verify_snapshot_path(Path::new(snapshot_path))?;
     let target = PathBuf::from(destination);
@@ -1970,6 +2060,25 @@ mod tests {
             .unwrap_err()
             .starts_with("ATTACHMENT_UNSUPPORTED:"));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn static_export_is_selected_escaped_and_source_preserving() {
+        let root = fixture();
+        fs::write(root.join("One.md"), "# <One>\n<script>alert(1)</script>").unwrap();
+        fs::write(root.join("Two.md"), "# Two").unwrap();
+        let destination = fixture();
+        fs::remove_dir_all(&destination).unwrap();
+        let before = fs::read(root.join("One.md")).unwrap();
+        let result =
+            export_static(&root, destination.to_str().unwrap(), &["One.md".into()]).unwrap();
+        assert_eq!(result.files, vec!["One.md"]);
+        let html = fs::read_to_string(destination.join("One.html")).unwrap();
+        assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
+        assert!(!destination.join("Two.html").exists());
+        assert_eq!(fs::read(root.join("One.md")).unwrap(), before);
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(destination).unwrap();
     }
 
     #[test]
