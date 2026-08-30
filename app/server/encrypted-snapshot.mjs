@@ -12,6 +12,14 @@ function passwordBytes(password) {
   return Buffer.from(password, "utf8");
 }
 
+export function safePayloadPath(value) {
+  if (typeof value !== "string" || !value || value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value)) throw new NimvaraError("ENCRYPTED_PATH", "Encrypted snapshot contains an unsafe path.");
+  const normalized = value.replaceAll("\\", "/");
+  const parts = normalized.split("/");
+  if (parts.some((part) => !part || part === "." || part === "..")) throw new NimvaraError("ENCRYPTED_PATH", "Encrypted snapshot contains an unsafe path.");
+  return parts.join("/");
+}
+
 export async function encryptSnapshot(snapshotPath, outputPath, password) {
   const snapshot = await verifySnapshot(snapshotPath);
   const files = [];
@@ -49,6 +57,7 @@ export async function restoreEncryptedSnapshot(encryptedPath, destination, passw
   const decoded = JSON.parse(payload.toString("utf8"));
   if (!decoded?.manifest || !Array.isArray(decoded.files) || decoded.manifest.id !== envelope.snapshotId) throw new NimvaraError("ENCRYPTED_MANIFEST", "Encrypted snapshot manifest is invalid.");
   for (const entry of decoded.files) {
+    safePayloadPath(entry.path);
     const bytes = Buffer.from(entry.data, "base64");
     if (bytes.length !== entry.bytes || sha256(bytes) !== entry.sha256) throw new NimvaraError("ENCRYPTED_CORRUPT", `Encrypted snapshot verification failed for ${entry.path}.`);
   }
@@ -57,7 +66,7 @@ export async function restoreEncryptedSnapshot(encryptedPath, destination, passw
   const staging = `${target}.partial-${randomBytes(6).toString("hex")}`;
   await mkdir(staging, { recursive: true });
   try {
-    for (const entry of decoded.files) { const output = path.join(staging, ...entry.path.split("/")); await mkdir(path.dirname(output), { recursive: true }); await writeFile(output, Buffer.from(entry.data, "base64"), { flag: "wx" }); }
+    for (const entry of decoded.files) { const output = path.join(staging, ...safePayloadPath(entry.path).split("/")); await mkdir(path.dirname(output), { recursive: true }); await writeFile(output, Buffer.from(entry.data, "base64"), { flag: "wx" }); }
     await rename(staging, target);
   } catch (error) { await rm(staging, { recursive: true, force: true }); throw new NimvaraError("ENCRYPTED_RESTORE", error.message); }
   return { destination: target, files: decoded.files.length, verified: true };

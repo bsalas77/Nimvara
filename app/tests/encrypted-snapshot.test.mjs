@@ -4,7 +4,14 @@ import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createSnapshot } from "../server/lantern-core.mjs";
-import { encryptSnapshot, restoreEncryptedSnapshot } from "../server/encrypted-snapshot.mjs";
+import { encryptSnapshot, restoreEncryptedSnapshot, safePayloadPath } from "../server/encrypted-snapshot.mjs";
+
+test("encrypted restore path policy rejects traversal and absolute aliases", () => {
+  for (const value of ["../escape.md", "C:\\escape.md", "/escape.md", "folder/../escape.md", "folder//file.md"]) {
+    assert.throws(() => safePayloadPath(value), /unsafe path/);
+  }
+  assert.equal(safePayloadPath("Résumé/日本語.md"), "Résumé/日本語.md");
+});
 
 test("encrypted snapshot authenticates, restores losslessly, and preserves source", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "nimvara-encrypted-root-"));
