@@ -251,6 +251,7 @@ pub struct CompatibilityReport {
     pub long_paths: usize,
     pub longest_relative_path: usize,
     pub broken_links: usize,
+    pub missing_attachments: usize,
     pub ambiguous_links: usize,
     pub extensions: HashMap<String, usize>,
 }
@@ -291,6 +292,7 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
             .max()
             .unwrap_or(0),
         broken_links: 0,
+        missing_attachments: 0,
         ambiguous_links: 0,
         extensions: HashMap::new(),
     };
@@ -321,7 +323,12 @@ pub fn compatibility_report(root: &Path) -> Result<CompatibilityReport, String> 
             report.broken_links += context
                 .outgoing
                 .iter()
-                .filter(|link| link.status == "missing")
+                .filter(|link| link.status == "missing" && !link.embed)
+                .count();
+            report.missing_attachments += context
+                .outgoing
+                .iter()
+                .filter(|link| link.status == "missing" && link.embed)
                 .count();
             report.ambiguous_links += context
                 .outgoing
