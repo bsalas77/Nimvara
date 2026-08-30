@@ -78,7 +78,7 @@ export function proposeTaskToggle(content, line, expectedText) {
 
 export function proposeKanbanMove(content, line, expectedText, targetColumn) {
   const column = String(targetColumn);
-  if (!["backlog", "doing", "done"].includes(column)) throw new Error("Unknown Kanban column.");
+  if (!/^[a-z][a-z0-9_-]{1,31}$/.test(column)) throw new Error("Kanban column must be a safe name (2–32 lowercase characters).");
   const lines = String(content).split(/\r?\n/), index = Number(line) - 1;
   if (index < 0 || index >= lines.length) throw new Error("Task source line no longer exists.");
   const match = lines[index].match(/^(\s*[-*+]\s+)\[([ xX])\](\s+)(.+?)\s*$/);
@@ -87,6 +87,7 @@ export function proposeKanbanMove(content, line, expectedText, targetColumn) {
   let text = match[4].replace(/\s+\((?:in progress|doing)\)\s*$/i, "").trim();
   const completed = column === "done";
   if (column === "doing") text = `${text} (In progress)`;
+  else if (column !== "done" && column !== "backlog") text = `${text} (${column.replaceAll("_", " ")})`;
   lines[index] = `${match[1]}[${completed ? "x" : " "}]${match[3]}${text}`;
   return { content: lines.join("\n"), before: original, after: lines[index], column };
 }
