@@ -144,7 +144,12 @@ export async function migrateWorkspace(sourcePath, destinationPath) {
   await mkdir(destination, { recursive: false });
   const entries = await walk(source);
   const manifest = [];
+  const progressPath = path.join(destination, ".nimvara-migration-progress.json");
+  const writeProgress = async (phase, completed) => {
+    await writeFile(progressPath, JSON.stringify({ schema: 1, phase, completed, total: entries.length, updatedAt: new Date().toISOString() }, null, 2), { flag: "w" });
+  };
   try {
+    await writeProgress("copying", 0);
     for (const entry of entries) {
       const relative = entry.relative.replaceAll("\\", "/");
       if (relative === META || relative.startsWith(`${META}/`)) continue;
@@ -156,9 +161,12 @@ export async function migrateWorkspace(sourcePath, destinationPath) {
       const verified = sha256(await readFile(target));
       if (hash !== verified) throw new NimvaraError("MIGRATION_VERIFY", `Copied file failed verification: ${relative}`);
       manifest.push({ path: relative, bytes: bytes.length, sha256: hash });
+      await writeProgress("copying", manifest.length);
     }
     const report = { schema: 1, source, destination, createdAt: new Date().toISOString(), files: manifest };
     await writeFile(path.join(destination, ".nimvara-migration.json"), JSON.stringify(report, null, 2), { flag: "wx" });
+    await writeProgress("complete", manifest.length);
+    await rm(progressPath, { force: true });
     return report;
   } catch (error) {
     await rm(destination, { recursive: true, force: true });
