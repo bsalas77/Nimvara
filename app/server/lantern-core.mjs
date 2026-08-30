@@ -320,6 +320,7 @@ export async function applyRename(root, from, to) {
 export function parseMarkdownStructure(content) {
   const headings = [];
   const wikilinks = [];
+  const attachmentReferences = [];
   const lines = String(content).split(/\r?\n/);
   let fence = null;
   for (let index = 0; index < lines.length; index++) {
@@ -344,9 +345,14 @@ export function parseMarkdownStructure(content) {
         embed: Boolean(match[1]),
         line: index + 1
       });
+      if (match[1] && target.trim() && !target.trim().toLowerCase().endsWith(".md")) attachmentReferences.push({ target: target.trim(), line: index + 1, embed: true, syntax: "wikilink" });
+    }
+    for (const match of lines[index].matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+      const target = match[1].trim().split(/\s+/)[0];
+      if (target && !/^(?:[a-z][a-z0-9+.-]*:|#|data:)/i.test(target)) attachmentReferences.push({ target, line: index + 1, embed: true, syntax: "markdown" });
     }
   }
-  return { headings, wikilinks };
+  return { headings, wikilinks, attachmentReferences };
 }
 
 function normalizeLinkTarget(value) {
@@ -393,6 +399,32 @@ export async function buildLinkIndex(root) {
   const diagnostics = [];
   for (const note of notes) for (const link of outgoing[note]) if (link.status !== "resolved") diagnostics.push({ source: note, line: link.line, target: link.target, status: link.status, candidates: link.candidates });
   return { notes, outgoing, backlinks, outlines: Object.fromEntries(notes.map((note) => [note, structures.get(note).headings])), diagnostics };
+}
+
+export async function attachmentDiagnostics(root) {
+  const files = await listWorkspaceFiles(root);
+  const attachments = files.filter((file) => file.kind === "attachment").map((file) => file.path);
+  const byName = new Map();
+  for (const file of attachments) {
+    const key = path.posix.basename(file).toLocaleLowerCase();
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(file);
+  }
+  const diagnostics = [];
+  for (const note of await listMarkdown(root)) {
+    const structure = parseMarkdownStructure(await readFile(path.join(root, ...note.split("/")), "utf8"));
+    for (const reference of structure.attachmentReferences) {
+      let decoded = reference.target;
+      try { decoded = decodeURIComponent(decoded); } catch { /* preserve malformed reference for review */ }
+      decoded = decoded.split("#", 1)[0].replaceAll("\\", "/");
+      const candidate = path.posix.normalize(path.posix.join(path.posix.dirname(note), decoded));
+      const safeCandidate = candidate.startsWith("../") || candidate === ".." ? null : candidate.replace(/^\.\//, "");
+      if (safeCandidate && attachments.some((file) => file.toLocaleLowerCase() === safeCandidate.toLocaleLowerCase())) continue;
+      const candidates = byName.get(path.posix.basename(decoded).toLocaleLowerCase()) ?? [];
+      diagnostics.push({ source: note, line: reference.line, target: reference.target, syntax: reference.syntax, status: "missing", candidates: [...candidates] });
+    }
+  }
+  return { diagnostics, attachmentCount: attachments.length };
 }
 
 export async function noteContext(root, relative) {

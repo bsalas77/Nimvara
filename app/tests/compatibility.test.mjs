@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   buildLinkIndex,
+  attachmentDiagnostics,
   listWorkspaceFiles,
   parseMarkdownStructure,
   saveConflictCopy,
@@ -74,6 +75,20 @@ test("workspace inventory includes attachments without treating them as notes", 
     { path: "image.png", kind: "attachment" },
     { path: "Note.md", kind: "markdown" }
   ]);
+});
+
+test("attachment diagnostics finds missing embeds and safe candidate matches without writing", async (t) => {
+  const root = await fixture(); t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, "Home.md"), "![[Screenshots/My%20Image.png]]\n![](missing.png)\n");
+  await mkdir(path.join(root, "Screenshots"));
+  await writeFile(path.join(root, "Screenshots", "My Image.png"), Buffer.from([1, 2, 3]));
+  await writeFile(path.join(root, "Archive", "missing.png"), Buffer.from([4]));
+  const before = await readFile(path.join(root, "Home.md"));
+  const report = await attachmentDiagnostics(root);
+  assert.equal(report.attachmentCount, 2);
+  assert.equal(report.diagnostics.length, 1);
+  assert.deepEqual(report.diagnostics[0].candidates, ["Archive/missing.png"]);
+  assert.deepEqual(await readFile(path.join(root, "Home.md")), before);
 });
 
 test("external edits change workspace state and conflict copy preserves both versions", async (t) => {
