@@ -20,6 +20,10 @@ The UI includes **Clear disposable search cache**. Clearing removes only the cac
 
 Synthetic workspace: 10,000 Markdown notes.
 
+## Latest release-mode measurement (2026-08-30)
+
+On the current Windows host, the Rust release benchmark reported: create 2,063 ms; list 10 ms; cold index 9,524 ms; incremental reopen 1,204 ms; warm search 1,643 microseconds. These are engineering baselines, not user-facing service-level objectives. Repeat on representative real vault copies before declaring the performance gate complete.
+
 | Operation | Measured result |
 |---|---:|
 | Cold safe index and cache creation | 7,965 ms |
