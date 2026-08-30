@@ -1480,6 +1480,40 @@ fn html_escape(value: &str) -> String {
         .replace('\'', "&#39;")
 }
 
+fn export_markdown_body(markdown: &str) -> String {
+    let mut output = String::new();
+    let mut rest = markdown;
+    while let Some(start) = rest.find("[[") {
+        output.push_str(&html_escape(&rest[..start]));
+        let Some(end_rel) = rest[start + 2..].find("]]") else {
+            output.push_str(&html_escape(&rest[start..]));
+            return output;
+        };
+        let end = start + 2 + end_rel;
+        let raw = &rest[start + 2..end];
+        let mut parts = raw.splitn(2, '|');
+        let target = parts.next().unwrap_or_default().trim();
+        let label = parts.next().unwrap_or(target).trim();
+        let safe_target = target
+            .replace('\\', "/")
+            .trim_start_matches('/')
+            .replace("..", "");
+        if safe_target.is_empty() || safe_target.contains(':') || safe_target.contains('#') {
+            output.push_str(&html_escape(&rest[start..end + 2]));
+        } else {
+            let href = format!("{}.html", safe_target.trim_end_matches(".md"));
+            output.push_str(&format!(
+                "<a href=\"{}\">{}</a>",
+                html_escape(&href),
+                html_escape(label)
+            ));
+        }
+        rest = &rest[end + 2..];
+    }
+    output.push_str(&html_escape(rest));
+    output
+}
+
 pub fn export_static(
     root: &Path,
     destination: &str,
@@ -1531,10 +1565,9 @@ pub fn export_static(
                 .lines()
                 .find_map(|line| line.strip_prefix("# "))
                 .unwrap_or_else(|| relative.trim_end_matches(".md"));
-            let html = format!("<!doctype html><meta charset=\"utf-8\"><title>{}</title><main><h1>{}</h1><pre>{}</pre></main>\n", html_escape(title), html_escape(title), html_escape(&markdown));
+            let html = format!("<!doctype html><meta charset=\"utf-8\"><title>{}</title><main><h1>{}</h1><pre>{}</pre></main>\n", html_escape(title), html_escape(title), export_markdown_body(&markdown));
             let output_relative = format!("{}.html", relative.trim_end_matches(".md"));
-            let output =
-                target.join(output_relative.replace('/', std::path::MAIN_SEPARATOR_STR));
+            let output = target.join(output_relative.replace('/', std::path::MAIN_SEPARATOR_STR));
             if let Some(parent) = output.parent() {
                 fs::create_dir_all(parent).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
             }
@@ -2065,7 +2098,11 @@ mod tests {
     #[test]
     fn static_export_is_selected_escaped_and_source_preserving() {
         let root = fixture();
-        fs::write(root.join("One.md"), "# <One>\n<script>alert(1)</script>").unwrap();
+        fs::write(
+            root.join("One.md"),
+            "# <One>\n[[Two|Read two]]\n<script>alert(1)</script>",
+        )
+        .unwrap();
         fs::write(root.join("Two.md"), "# Two").unwrap();
         let destination = fixture();
         fs::remove_dir_all(&destination).unwrap();
@@ -2075,6 +2112,7 @@ mod tests {
         assert_eq!(result.files, vec!["One.md"]);
         let html = fs::read_to_string(destination.join("One.html")).unwrap();
         assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
+        assert!(html.contains("<a href=\"Two.html\">Read two</a>"));
         assert!(!destination.join("Two.html").exists());
         assert_eq!(fs::read(root.join("One.md")).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
