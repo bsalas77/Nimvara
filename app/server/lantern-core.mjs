@@ -174,6 +174,25 @@ export async function migrateWorkspace(sourcePath, destinationPath) {
   }
 }
 
+export async function readMigrationProgress(destinationPath) {
+  const destination = path.resolve(String(destinationPath));
+  const progressPath = path.join(destination, ".nimvara-migration-progress.json");
+  try {
+    const value = JSON.parse(await readFile(progressPath, "utf8"));
+    if (!value || value.schema !== 1 || !["copying", "complete"].includes(value.phase)) return null;
+    return {
+      schema: 1,
+      phase: value.phase,
+      completed: Number.isSafeInteger(value.completed) ? value.completed : 0,
+      total: Number.isSafeInteger(value.total) ? value.total : 0,
+      updatedAt: String(value.updatedAt || "")
+    };
+  } catch (error) {
+    if (error?.code === "ENOENT" || error instanceof SyntaxError) return null;
+    throw new NimvaraError("MIGRATION_PROGRESS", "Migration progress could not be read safely.");
+  }
+}
+
 export async function readMarkdown(root, relative) {
   const target = await resolveInside(root, relative);
   const data = await readFile(target.absolute);
