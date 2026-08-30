@@ -20,6 +20,54 @@ const META: &str = ".lantern";
 #[derive(Default)]
 pub struct NativeWorkspace(pub Mutex<Option<PathBuf>>);
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupSchedule {
+    pub enabled: bool,
+    pub interval_minutes: u32,
+    pub destination: String,
+    pub next_run_at: Option<String>,
+}
+
+pub fn default_backup_schedule() -> BackupSchedule {
+    BackupSchedule {
+        enabled: false,
+        interval_minutes: 60,
+        destination: String::new(),
+        next_run_at: None,
+    }
+}
+
+pub fn load_backup_schedule(root: &Path) -> BackupSchedule {
+    fs::read_to_string(root.join(META).join("backup-schedule.json"))
+        .ok()
+        .and_then(|data| serde_json::from_str(&data).ok())
+        .unwrap_or_else(default_backup_schedule)
+}
+
+pub fn save_backup_schedule(
+    root: &Path,
+    mut schedule: BackupSchedule,
+) -> Result<BackupSchedule, String> {
+    schedule.interval_minutes = schedule.interval_minutes.clamp(15, 10080);
+    if schedule.enabled && schedule.destination.trim().is_empty() {
+        return Err("INVALID_BACKUP_SCHEDULE: An external backup destination is required.".into());
+    }
+    schedule.destination = schedule.destination.trim().to_string();
+    schedule.next_run_at = None;
+    let meta = root.join(META);
+    fs::create_dir_all(&meta).map_err(|e| format!("BACKUP_SCHEDULE: {e}"))?;
+    let path = meta.join("backup-schedule.json");
+    let temp = meta.join(".backup-schedule.tmp");
+    fs::write(
+        &temp,
+        serde_json::to_vec_pretty(&schedule).map_err(|e| format!("BACKUP_SCHEDULE: {e}"))?,
+    )
+    .map_err(|e| format!("BACKUP_SCHEDULE: {e}"))?;
+    fs::rename(&temp, &path).map_err(|e| format!("BACKUP_SCHEDULE: {e}"))?;
+    Ok(schedule)
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Note {

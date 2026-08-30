@@ -42,6 +42,8 @@ async function api(url, options = {}) {
       if (method === "GET" && parsed.pathname === "/api/history") return window.__TAURI__.core.invoke("native_list_history", { path: parsed.searchParams.get("path") });
       if (method === "POST" && parsed.pathname === "/api/history/restore") return window.__TAURI__.core.invoke("native_restore_history", { checkpointId: input.checkpointId, expectedHash: input.expectedHash });
       if (method === "POST" && parsed.pathname === "/api/snapshots") return window.__TAURI__.core.invoke("native_create_snapshot", { destination: input.destination });
+      if (method === "GET" && parsed.pathname === "/api/snapshots/schedule") return window.__TAURI__.core.invoke("native_backup_schedule");
+      if (method === "POST" && parsed.pathname === "/api/snapshots/schedule") return window.__TAURI__.core.invoke("native_set_backup_schedule", { enabled: Boolean(input.enabled), interval_minutes: Number(input.intervalMinutes), destination: input.destination });
       if (method === "GET" && parsed.pathname === "/api/snapshots") return window.__TAURI__.core.invoke("native_list_snapshots", { destination: parsed.searchParams.get("destination") });
       if (method === "POST" && parsed.pathname === "/api/snapshots/restore") return window.__TAURI__.core.invoke("native_restore_snapshot", { snapshotPath: input.snapshotPath, destination: input.destination });
       if (method === "GET" && parsed.pathname === "/api/workspace-files") return window.__TAURI__.core.invoke("native_workspace_files");

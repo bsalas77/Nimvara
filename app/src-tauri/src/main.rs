@@ -397,6 +397,31 @@ fn native_restore_snapshot(
 }
 
 #[tauri::command]
+fn native_backup_schedule(
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::BackupSchedule, String> {
+    Ok(native_core::load_backup_schedule(&active_root(&state)?))
+}
+
+#[tauri::command]
+fn native_set_backup_schedule(
+    enabled: bool,
+    interval_minutes: u32,
+    destination: String,
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::BackupSchedule, String> {
+    native_core::save_backup_schedule(
+        &active_root(&state)?,
+        native_core::BackupSchedule {
+            enabled,
+            interval_minutes,
+            destination,
+            next_run_at: None,
+        },
+    )
+}
+
+#[tauri::command]
 fn native_workspace_files(
     state: tauri::State<'_, native_core::NativeWorkspace>,
 ) -> Result<Vec<native_core::WorkspaceFile>, String> {
@@ -684,6 +709,8 @@ fn main() {
             native_create_snapshot,
             native_list_snapshots,
             native_restore_snapshot,
+            native_backup_schedule,
+            native_set_backup_schedule,
             native_workspace_files,
             native_workspace_state,
             native_save_conflict_copy,
