@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { watch } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -46,6 +46,17 @@ let backupSchedule = normalizeBackupSchedule();
 let backupTimer = null;
 let backupLastRun = null;
 let backupRunning = false;
+const backupScheduleFile = (root) => path.join(root, ".lantern", "backup-schedule.json");
+
+async function loadBackupSchedule(root) {
+  try { const saved = JSON.parse(await readFile(backupScheduleFile(root), "utf8")); backupSchedule = normalizeBackupSchedule(saved); }
+  catch { backupSchedule = normalizeBackupSchedule(); }
+}
+
+async function persistBackupSchedule(root) {
+  await mkdir(path.dirname(backupScheduleFile(root)), { recursive: true });
+  await writeFile(backupScheduleFile(root), `${JSON.stringify(backupSchedule, null, 2)}\n`, "utf8");
+}
 
 function scheduleBackupTimer() {
   if (backupTimer) clearInterval(backupTimer);
@@ -146,6 +157,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/workspace") {
       const input = await body(request);
       workspace = await canonicalRoot(input.path, Boolean(input.create));
+      await loadBackupSchedule(workspace);
       startWorkspaceWatcher(workspace);
       scheduleBackupTimer();
       return send(response, 200, { workspace, files: await listMarkdown(workspace) });
@@ -193,7 +205,7 @@ export const server = createServer(async (request, response) => {
     }
     if (request.method === "GET" && url.pathname === "/api/snapshots") return send(response, 200, await listSnapshots(url.searchParams.get("destination")));
     if (request.method === "GET" && url.pathname === "/api/snapshots/schedule") return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun });
-    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); scheduleBackupTimer(); return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun }); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); await persistBackupSchedule(requireWorkspace()); scheduleBackupTimer(); return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun }); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
