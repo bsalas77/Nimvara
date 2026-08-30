@@ -7,3 +7,4 @@ await import("./productivity.test.mjs");
 await import("./workspace-ui.test.mjs");
 await import("./capabilities.test.mjs");
 await import("./sync.test.mjs");
+await import("./encrypted-snapshot.test.mjs");
