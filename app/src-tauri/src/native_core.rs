@@ -1835,6 +1835,13 @@ mod tests {
             "# Plan\n## Next\n[[Home]]",
         )
         .unwrap();
+        fs::write(root.join("Projects").join("My Note.md"), "# Encoded").unwrap();
+        fs::OpenOptions::new()
+            .append(true)
+            .open(root.join("Home.md"))
+            .unwrap()
+            .write_all(b"\n[[Projects/My%20Note]]")
+            .unwrap();
         fs::write(root.join("Projects").join("Duplicate.md"), "# Current").unwrap();
         fs::write(root.join("Archive").join("Duplicate.md"), "# Old").unwrap();
         let home = note_context(&root, "Home.md").unwrap();
@@ -1842,6 +1849,10 @@ mod tests {
         assert_eq!(home.outgoing[0].path.as_deref(), Some("Projects/Plan.md"));
         assert_eq!(home.outgoing[0].alias.as_deref(), Some("Roadmap"));
         assert_eq!(home.outgoing[1].status, "missing");
+        assert!(home
+            .outgoing
+            .iter()
+            .any(|link| link.path.as_deref() == Some("Projects/My Note.md")));
         assert_eq!(home.outgoing[2].status, "ambiguous");
         assert_eq!(home.outgoing[2].candidates.len(), 2);
         assert_eq!(home.backlinks[0].source, "Projects/Plan.md");
