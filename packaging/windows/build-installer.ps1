@@ -35,5 +35,11 @@ try {
   Pop-Location
 }
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $output)) { throw 'Nimvara installer compilation failed.' }
-Copy-Item -LiteralPath $output -Destination $rootInstaller -Force
+try {
+  Copy-Item -LiteralPath $output -Destination $rootInstaller -Force -ErrorAction Stop
+} catch {
+  # The dist artifact is the canonical output. A stale convenience copy may be
+  # open by Explorer/antivirus or the installed app; do not fail the build for it.
+  Write-Warning "Could not refresh root-level convenience copy: $($_.Exception.Message)"
+}
 Get-Item -LiteralPath $output,$rootInstaller | Select-Object FullName,Length,LastWriteTime
