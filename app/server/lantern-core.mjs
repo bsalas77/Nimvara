@@ -350,7 +350,9 @@ export function parseMarkdownStructure(content) {
 }
 
 function normalizeLinkTarget(value) {
-  return value.replaceAll("\\", "/").replace(/^\/+/, "").replace(/\.md$/i, "");
+  let decoded = value;
+  try { decoded = decodeURIComponent(value); } catch { /* retain malformed user input for diagnostics */ }
+  return decoded.replaceAll("\\", "/").replace(/^\/+/, "").replace(/\.md$/i, "");
 }
 
 export async function buildLinkIndex(root) {

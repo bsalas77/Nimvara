@@ -30,6 +30,16 @@ test("Markdown structure captures headings, aliases, embeds, and ignores fenced 
   ]);
 });
 
+test("URL-encoded wikilink targets resolve without changing source bytes", async () => {
+  const root = await fixture();
+  await writeFile(path.join(root, "Projects", "My Note.md"), "# Note\n", "utf8");
+  await writeFile(path.join(root, "Index.md"), "[[Projects/My%20Note]]\n", "utf8");
+  const index = await buildLinkIndex(root);
+  assert.equal(index.outgoing["Index.md"][0].status, "resolved");
+  assert.equal(index.outgoing["Index.md"][0].path, "Projects/My Note.md");
+  await rm(root, { recursive: true, force: true });
+});
+
 test("link index resolves exact, relative, and unique basename links with backlinks", async (t) => {
   const root = await fixture(); t.after(() => rm(root, { recursive: true, force: true }));
   await writeFile(path.join(root, "Home.md"), "[[Projects/Plan]]\n[[Unique]]");
