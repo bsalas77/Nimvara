@@ -1514,6 +1514,39 @@ fn export_markdown_body(markdown: &str) -> String {
     output
 }
 
+fn export_attachment_targets(markdown: &str) -> Vec<String> {
+    let mut targets = Vec::new();
+    let mut rest = markdown;
+    while let Some(start) = rest.find("![[") {
+        let after = &rest[start + 3..];
+        let Some(end) = after.find("]]") else { break };
+        let target = after[..end].split('|').next().unwrap_or_default().trim();
+        if !target.is_empty() {
+            targets.push(target.replace('\\', "/"));
+        }
+        rest = &after[end + 2..];
+    }
+    rest = markdown;
+    while let Some(start) = rest.find("](") {
+        let prefix = &rest[..start];
+        if prefix.ends_with(']') {
+            let after = &rest[start + 2..];
+            if let Some(end) = after.find(')') {
+                let target = after[..end].trim();
+                if !target.is_empty() {
+                    targets.push(target.replace('\\', "/"));
+                }
+                rest = &after[end + 1..];
+                continue;
+            }
+        }
+        rest = &rest[start + 2..];
+    }
+    targets.sort();
+    targets.dedup();
+    targets
+}
+
 pub fn export_static(
     root: &Path,
     destination: &str,
@@ -1550,6 +1583,15 @@ pub fn export_static(
     let mut files = Vec::new();
     let mut walked = Vec::new();
     walk_files(&source, &source, &mut walked)?;
+    let available: HashMap<String, (PathBuf, String)> = walked
+        .iter()
+        .map(|(absolute, relative)| {
+            (
+                relative.to_lowercase(),
+                (absolute.clone(), relative.clone()),
+            )
+        })
+        .collect();
     let result = (|| {
         for (absolute, relative) in walked {
             if !relative.to_lowercase().ends_with(".md")
@@ -1572,6 +1614,27 @@ pub fn export_static(
                 fs::create_dir_all(parent).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
             }
             fs::write(&output, html).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
+            for attachment in export_attachment_targets(&markdown) {
+                let clean = clean_snapshot_relative(&attachment)?;
+                if clean.contains(':') || clean.starts_with("/") || clean.starts_with("\\") {
+                    continue;
+                }
+                let Some((attachment_source, attachment_relative)) =
+                    available.get(&clean.to_lowercase())
+                else {
+                    continue;
+                };
+                if attachment_relative.to_lowercase().ends_with(".md") {
+                    continue;
+                }
+                let attachment_output =
+                    target.join(attachment_relative.replace('/', std::path::MAIN_SEPARATOR_STR));
+                if let Some(parent) = attachment_output.parent() {
+                    fs::create_dir_all(parent).map_err(|error| format!("EXPORT_WRITE: {error}"))?;
+                }
+                fs::copy(attachment_source, &attachment_output)
+                    .map_err(|error| format!("EXPORT_WRITE: {error}"))?;
+            }
             files.push(relative);
         }
         Ok(StaticExportResult {
@@ -2100,9 +2163,10 @@ mod tests {
         let root = fixture();
         fs::write(
             root.join("One.md"),
-            "# <One>\n[[Two|Read two]]\n<script>alert(1)</script>",
+            "# <One>\n[[Two|Read two]]\n![[image.png]]\n![alt](image.png)\n<script>alert(1)</script>",
         )
         .unwrap();
+        fs::write(root.join("image.png"), b"PNG-TEST-BYTES").unwrap();
         fs::write(root.join("Two.md"), "# Two").unwrap();
         let destination = fixture();
         fs::remove_dir_all(&destination).unwrap();
@@ -2113,6 +2177,10 @@ mod tests {
         let html = fs::read_to_string(destination.join("One.html")).unwrap();
         assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
         assert!(html.contains("<a href=\"Two.html\">Read two</a>"));
+        assert_eq!(
+            fs::read(destination.join("image.png")).unwrap(),
+            b"PNG-TEST-BYTES"
+        );
         assert!(!destination.join("Two.html").exists());
         assert_eq!(fs::read(root.join("One.md")).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
