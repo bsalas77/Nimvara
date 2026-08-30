@@ -18,7 +18,7 @@ check("SUPPORT_DOCUMENT", existsSync(resolve(root, "SUPPORT.md")), "SUPPORT.md e
 check("SBOM", existsSync(resolve(root, "dist/nimvara.cdx.json")), "CycloneDX SBOM generated from locked manifests.");
 check("PRODUCTION_CSP", read("app/src-tauri/tauri.conf.json").includes("default-src 'none'") && !read("app/src-tauri/tauri.conf.json").includes("unsafe-inline") && !read("app/src-tauri/tauri.conf.json").includes("unsafe-eval"), "Tauri CSP denies all default loads and disallows inline/eval execution; automated regression test passes.");
 check("SESSION_ONLY_CREDENTIALS", !read("app/public/app.js").includes('localStorage.setItem("nimvara-ai') && !read("app/public/app.js").includes('sessionStorage.setItem("nimvara-ai'), "AI credentials are session-only and have no application storage path; optional OS-vault persistence remains disabled.");
-check("WINDOWS_INSTALLER", existsSync(resolve(root, "dist/Nimvara-Setup-0.7.0-dev.exe")), "Windows development installer exists and passed installed UI smoke testing.");
+check("WINDOWS_INSTALLER", existsSync(resolve(root, "dist/Nimvara-Setup-0.7.0-dev.exe")), "Windows development installer artifact exists; current-build clean-install UI smoke evidence remains required (the installed copy was not replaced during the last local attempt).");
 check("WINDOWS_MSIX", existsSync(resolve(root, "dist/Nimvara-0.7.0-dev.msix")), "Development MSIX exists with placeholder identity and no trusted signature.", true);
 check("LINUX_DEB", existsSync(resolve(root, "dist/Nimvara_0.7.0_amd64.deb")), "Current Debian package uses the reviewed glib security backport and passed Linux formatting, tests, strict linting, package inspection, and dynamic-link resolution; installed GUI testing remains.");
 check("MACOS_ARTIFACT", false, "Requires a macOS runner, Apple Developer membership, Developer ID, notarization, and host testing.", true);
@@ -30,6 +30,7 @@ check("SIGNING", false, "Requires verified Microsoft/Apple signing identities an
 check("PUBLIC_URLS", false, "Requires a controlled HTTPS domain or published repository URLs.", true);
 check("SEARCH_PERFORMANCE", true, "Persistent indexing baseline (release mode, 10,000 synthetic notes) is 1,204 ms for unchanged reopen and 1,643 microseconds for warm search; background progress, cancellation, generation isolation, and corrupt-cache recovery are implemented and tested. Representative real-vault measurements remain required.");
 check("BACKUP_RESTORE_DRILL", existsSync(resolve(root, "tools/restore-drill.mjs")), "Disposable restore drill is present; run `node tools/restore-drill.mjs` during release qualification to verify snapshot and restore hashes without touching user workspaces.");
+check("NATIVE_ATTACHMENT_PREVIEW", read("app/src-tauri/src/native_core.rs").includes("MAX_PREVIEW_BYTES") && read("app/src-tauri/src/main.rs").includes("native_read_attachment_preview"), "Native desktop previews are bounded, typed, read-only, and covered by the native test suite.");
 check("DEPENDENCY_POLICY", existsSync(resolve(root, "app/src-tauri/third_party/glib-0.18.5-patched/PROVENANCE.md")), "RustSec reports zero vulnerability advisories. RUSTSEC-2024-0429 is repaired by the exact reviewed upstream backport, guarded by dependency-tree/source verification; informational GTK3 maintenance warnings remain tracked.");
 
 const artifacts = [
