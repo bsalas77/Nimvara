@@ -44,6 +44,7 @@ import {
 } from "./ingestion-core.mjs";
 import { validateExtensionManifest } from "./extension-manifest.mjs";
 import { listExtensions, registerExtension, setExtensionEnabled } from "./extension-registry.mjs";
+import { getMobileCapabilities } from "./mobile-capabilities.mjs";
 import { encryptSnapshot, restoreEncryptedSnapshot } from "./encrypted-snapshot.mjs";
 
 let workspace = null;
@@ -243,6 +244,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/ingestion/capabilities") return send(response, 200, ingestionCapabilities);
     if (request.method === "POST" && url.pathname === "/api/extensions/validate") { const input = await body(request); return send(response, 200, validateExtensionManifest(input)); }
     if (request.method === "GET" && url.pathname === "/api/extensions") return send(response, 200, listExtensions());
+    if (request.method === "GET" && url.pathname === "/api/capabilities/mobile") return send(response, 200, getMobileCapabilities());
     if (request.method === "POST" && url.pathname === "/api/extensions/register") { const input = await body(request); return send(response, 200, registerExtension(input)); }
     if (request.method === "POST" && url.pathname === "/api/extensions/toggle") { const input = await body(request); return send(response, 200, setExtensionEnabled(input.id, input.enabled)); }
     if (request.method === "POST" && url.pathname === "/api/ingestion/preview-url") {
