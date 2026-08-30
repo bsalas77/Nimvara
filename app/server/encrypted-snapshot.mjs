@@ -6,6 +6,7 @@ import { NimvaraError, sha256, verifySnapshot } from "./lantern-core.mjs";
 const FORMAT = "nimvara-encrypted-snapshot-v1";
 const MAX_PASSWORD = 4096;
 const MAX_PAYLOAD_BYTES = 512 * 1024 * 1024;
+const MAX_FILES = 100_000;
 
 function passwordBytes(password) {
   if (typeof password !== "string" || password.length < 12 || password.length > MAX_PASSWORD) throw new NimvaraError("INVALID_PASSWORD", "Use a password between 12 and 4096 characters.");
@@ -55,9 +56,13 @@ export async function restoreEncryptedSnapshot(encryptedPath, destination, passw
   } catch { throw new NimvaraError("ENCRYPTED_AUTH", "Password or encrypted snapshot authentication failed."); }
   if (payload.length > MAX_PAYLOAD_BYTES) throw new NimvaraError("ENCRYPTED_PAYLOAD_TOO_LARGE", "Encrypted snapshot payload exceeds the 512 MiB safety limit.");
   const decoded = JSON.parse(payload.toString("utf8"));
-  if (!decoded?.manifest || !Array.isArray(decoded.files) || decoded.manifest.id !== envelope.snapshotId) throw new NimvaraError("ENCRYPTED_MANIFEST", "Encrypted snapshot manifest is invalid.");
+  if (!decoded?.manifest || !Array.isArray(decoded.files) || decoded.files.length > MAX_FILES || decoded.manifest.id !== envelope.snapshotId) throw new NimvaraError("ENCRYPTED_MANIFEST", "Encrypted snapshot manifest is invalid or exceeds the file-count limit.");
+  const paths = new Set();
   for (const entry of decoded.files) {
-    safePayloadPath(entry.path);
+    const safePath = safePayloadPath(entry.path);
+    const folded = safePath.toLocaleLowerCase();
+    if (paths.has(folded)) throw new NimvaraError("ENCRYPTED_MANIFEST", "Encrypted snapshot contains duplicate or case-colliding paths.");
+    paths.add(folded);
     const bytes = Buffer.from(entry.data, "base64");
     if (bytes.length !== entry.bytes || sha256(bytes) !== entry.sha256) throw new NimvaraError("ENCRYPTED_CORRUPT", `Encrypted snapshot verification failed for ${entry.path}.`);
   }
