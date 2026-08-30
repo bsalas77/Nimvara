@@ -27,4 +27,4 @@ Before production release, automated tests must cover wrong-key refusal, tampere
 
 ## Current status
 
-Verified unencrypted snapshots, bounded scheduling, explicit run-now, retention planning, and safe restore are implemented. Encryption and platform credential-store integration are not yet implemented and must not be implied by this design document.
+Verified unencrypted snapshots, bounded scheduling, explicit run-now, retention planning, safe restore, and a password-based encrypted-snapshot service proof of concept are implemented. The encrypted service is not yet wired to native key stores, scheduled backups, or the desktop UI; platform credential-store integration, key rotation, and production interoperability remain release gates.

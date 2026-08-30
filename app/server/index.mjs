@@ -40,6 +40,7 @@ import {
   previewUrlCapture
 } from "./ingestion-core.mjs";
 import { validateExtensionManifest } from "./extension-manifest.mjs";
+import { encryptSnapshot, restoreEncryptedSnapshot } from "./encrypted-snapshot.mjs";
 
 let workspace = null;
 let workspaceWatcher = null;
@@ -221,6 +222,8 @@ export const server = createServer(async (request, response) => {
     }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/encrypt") { const input = await body(request); return send(response, 200, await encryptSnapshot(input.snapshotPath, input.outputPath, input.password)); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/encrypted-restore") { const input = await body(request); return send(response, 200, await restoreEncryptedSnapshot(input.encryptedPath, input.destination, input.password)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
       const input = await body(request);
       return send(response, 200, await restoreSnapshot(input.snapshotPath, input.destination));
