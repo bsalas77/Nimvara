@@ -11,5 +11,6 @@ await import("./extension-registry.test.mjs");
 await import("./attachment-repair.test.mjs");
 await import("./kanban-custom.test.mjs");
 await import("./mobile-capabilities.test.mjs");
+await import("./kanban-boards.test.mjs");
 await import("./sync.test.mjs");
 await import("./encrypted-snapshot.test.mjs");
