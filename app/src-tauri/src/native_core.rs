@@ -587,11 +587,37 @@ fn parse_structure(content: &str) -> (Vec<Heading>, Vec<ParsedLink>) {
 }
 
 fn link_key(value: &str) -> String {
-    value
+    percent_decode(value)
         .replace('\\', "/")
         .trim_start_matches('/')
         .trim_end_matches(".md")
         .to_lowercase()
+}
+
+fn percent_decode(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut output = Vec::with_capacity(value.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            let hex = |byte: u8| -> Option<u8> {
+                match byte {
+                    b'0'..=b'9' => Some(byte - b'0'),
+                    b'a'..=b'f' => Some(byte - b'a' + 10),
+                    b'A'..=b'F' => Some(byte - b'A' + 10),
+                    _ => None,
+                }
+            };
+            if let (Some(high), Some(low)) = (hex(bytes[index + 1]), hex(bytes[index + 2])) {
+                output.push(high * 16 + low);
+                index += 3;
+                continue;
+            }
+        }
+        output.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8_lossy(&output).into_owned()
 }
 
 pub fn note_context(root: &Path, relative: &str) -> Result<NoteContext, String> {
