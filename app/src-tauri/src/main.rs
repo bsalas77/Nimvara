@@ -422,6 +422,18 @@ fn native_set_backup_schedule(
 }
 
 #[tauri::command]
+fn native_run_backup_now(
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::Snapshot, String> {
+    let root = active_root(&state)?;
+    let schedule = native_core::load_backup_schedule(&root);
+    if !schedule.enabled {
+        return Err("BACKUP_DISABLED: Enable scheduled backups before running one.".into());
+    }
+    native_core::create_snapshot(&root, &schedule.destination)
+}
+
+#[tauri::command]
 fn native_workspace_files(
     state: tauri::State<'_, native_core::NativeWorkspace>,
 ) -> Result<Vec<native_core::WorkspaceFile>, String> {
@@ -711,6 +723,7 @@ fn main() {
             native_restore_snapshot,
             native_backup_schedule,
             native_set_backup_schedule,
+            native_run_backup_now,
             native_workspace_files,
             native_workspace_state,
             native_save_conflict_copy,

@@ -205,7 +205,18 @@ export const server = createServer(async (request, response) => {
     }
     if (request.method === "GET" && url.pathname === "/api/snapshots") return send(response, 200, await listSnapshots(url.searchParams.get("destination")));
     if (request.method === "GET" && url.pathname === "/api/snapshots/schedule") return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun });
-    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") { backupSchedule = normalizeBackupSchedule(await body(request)); await persistBackupSchedule(requireWorkspace()); scheduleBackupTimer(); return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun }); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule") {
+      const input = await body(request); const next = normalizeBackupSchedule(input); const root = requireWorkspace();
+      if (next.enabled) { const workspacePath = path.resolve(root); const destinationPath = path.resolve(next.destination); const prefix = workspacePath.endsWith(path.sep) ? workspacePath : `${workspacePath}${path.sep}`; if (destinationPath === workspacePath || destinationPath.startsWith(prefix)) throw new NimvaraError("UNSAFE_DESTINATION", "Scheduled backups must use a separate destination."); }
+      backupSchedule = next; await persistBackupSchedule(root); scheduleBackupTimer(); return send(response, 200, { ...backupSchedule, running: backupRunning, lastRun: backupLastRun });
+    }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/schedule/run-now") {
+      const root = requireWorkspace(); if (!backupSchedule.enabled) throw new NimvaraError("BACKUP_DISABLED", "Enable scheduled backups before running one.");
+      if (backupRunning) throw new NimvaraError("BACKUP_RUNNING", "A scheduled backup is already running.", 409);
+      backupRunning = true; try { const snapshot = await createSnapshot(root, backupSchedule.destination); backupLastRun = { status: "success", completedAt: new Date().toISOString(), snapshot: snapshot.id }; return send(response, 200, { ...backupSchedule, running: false, lastRun: backupLastRun }); }
+      catch (error) { backupLastRun = { status: "failed", completedAt: new Date().toISOString(), code: error.code || "BACKUP_FAILED", message: error.message }; throw error; }
+      finally { backupRunning = false; }
+    }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {

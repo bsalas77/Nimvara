@@ -43,6 +43,7 @@ export const api = {
   snapshots: (destination: string) => request<Snapshot[]>(`/api/snapshots?destination=${encodeURIComponent(destination)}`),
   backupSchedule: () => request<{ enabled: boolean; intervalMinutes: number; destination: string; nextRunAt: string | null; running: boolean; lastRun: unknown }>("/api/snapshots/schedule"),
   setBackupSchedule: (enabled: boolean, intervalMinutes: number, destination: string) => request<{ enabled: boolean; intervalMinutes: number; destination: string; nextRunAt: string | null; running: boolean; lastRun: unknown }>("/api/snapshots/schedule", { method: "POST", body: JSON.stringify({ enabled, intervalMinutes, destination }) }),
+  runScheduledBackup: () => request<Snapshot>("/api/snapshots/schedule/run-now", { method: "POST" }),
   snapshotPrunePlan: (destination: string, keep = 5) => request<{ keep: number; retain: string[]; remove: string[] }>("/api/snapshots/prune-plan", { method: "POST", body: JSON.stringify({ destination, keep }) }),
   pruneSnapshots: (destination: string, keep = 5) => request<{ keep: number; retain: string[]; remove: string[] }>("/api/snapshots/prune", { method: "POST", body: JSON.stringify({ destination, keep, confirm: true }) }),
   restoreSnapshot: (snapshotPath: string, destination: string) => request<{ destination: string; files: number; verified: boolean }>("/api/snapshots/restore", { method: "POST", body: JSON.stringify({ snapshotPath, destination }) }),
