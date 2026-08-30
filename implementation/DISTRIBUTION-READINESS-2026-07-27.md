@@ -18,7 +18,7 @@ Nimvara is **not yet 100% distribution-ready**. It is a tested Windows developme
 - Added a read-only AI boundary for loopback local providers and an explicit reviewed-host allowlist for paid HTTPS providers.
 - Disabled AI redirects, blocked private/local paid-provider destinations, limited request sizes/time, kept API keys session-only, and withheld all AI file-writing authority.
 - Added a disposable persistent incremental search cache outside the workspace, with external-change and mutation invalidation, corruption recovery, and a user-visible clear action.
-- Measured 10,000 synthetic notes: 7,965 ms cold safe index/cache creation, 515 ms unchanged incremental reopen, and 816 microseconds warm search on this host. Indexing starts in a background thread when a workspace opens.
+- Measured 10,000 synthetic notes in release mode on 2026-08-30: 9,524 ms cold index, 1,204 ms unchanged incremental reopen, and 1,643 microseconds warm search. These are engineering baselines, not production SLOs; representative real-vault and clean-machine measurements remain required.
 - Generated a 480-component CycloneDX SBOM from locked dependency manifests.
 - Pinned existing GitHub Actions to immutable commit hashes.
 - Added manual cross-platform Windows/Linux/macOS candidate-build workflow definitions.
