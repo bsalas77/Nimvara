@@ -389,6 +389,23 @@ fn native_list_snapshots(destination: String) -> Result<Vec<native_core::Snapsho
 }
 
 #[tauri::command]
+fn native_snapshot_prune_plan(
+    destination: String,
+    keep: usize,
+) -> Result<native_core::SnapshotPrunePlan, String> {
+    native_core::plan_snapshot_prune(&destination, keep)
+}
+
+#[tauri::command]
+fn native_prune_snapshots(
+    destination: String,
+    keep: usize,
+    confirm: bool,
+) -> Result<native_core::SnapshotPrunePlan, String> {
+    native_core::prune_snapshots(&destination, keep, confirm)
+}
+
+#[tauri::command]
 fn native_restore_snapshot(
     snapshot_path: String,
     destination: String,
@@ -720,6 +737,8 @@ fn main() {
             native_restore_history,
             native_create_snapshot,
             native_list_snapshots,
+            native_snapshot_prune_plan,
+            native_prune_snapshots,
             native_restore_snapshot,
             native_backup_schedule,
             native_set_backup_schedule,

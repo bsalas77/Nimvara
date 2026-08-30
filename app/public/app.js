@@ -57,6 +57,8 @@ async function api(url, options = {}) {
       if (method === "POST" && parsed.pathname === "/api/snapshots/schedule") return window.__TAURI__.core.invoke("native_set_backup_schedule", { enabled: Boolean(input.enabled), interval_minutes: Number(input.intervalMinutes), destination: input.destination });
       if (method === "POST" && parsed.pathname === "/api/snapshots/schedule/run-now") return window.__TAURI__.core.invoke("native_run_backup_now");
       if (method === "GET" && parsed.pathname === "/api/snapshots") return window.__TAURI__.core.invoke("native_list_snapshots", { destination: parsed.searchParams.get("destination") });
+      if (method === "POST" && parsed.pathname === "/api/snapshots/prune-plan") return window.__TAURI__.core.invoke("native_snapshot_prune_plan", { destination: input.destination, keep: Number(input.keep) });
+      if (method === "POST" && parsed.pathname === "/api/snapshots/prune") return window.__TAURI__.core.invoke("native_prune_snapshots", { destination: input.destination, keep: Number(input.keep), confirm: Boolean(input.confirm) });
       if (method === "POST" && parsed.pathname === "/api/snapshots/restore") return window.__TAURI__.core.invoke("native_restore_snapshot", { snapshotPath: input.snapshotPath, destination: input.destination });
       if (method === "GET" && parsed.pathname === "/api/workspace-files") return window.__TAURI__.core.invoke("native_workspace_files");
       if (method === "GET" && parsed.pathname === "/api/workspace-dashboard") return window.__TAURI__.core.invoke("native_workspace_dashboard");

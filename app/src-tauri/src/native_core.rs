@@ -145,6 +145,14 @@ pub struct Snapshot {
     pub verified: bool,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SnapshotPrunePlan {
+    pub keep: usize,
+    pub retain: Vec<Snapshot>,
+    pub remove: Vec<Snapshot>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct RestoreResult {
     pub destination: String,
@@ -1359,6 +1367,50 @@ pub fn list_snapshots(destination: &str) -> Result<Vec<Snapshot>, String> {
     Ok(output)
 }
 
+/// Plan and execute retention only for verified snapshots. Invalid or corrupt
+/// snapshot directories are deliberately retained for investigation.
+pub fn plan_snapshot_prune(destination: &str, keep: usize) -> Result<SnapshotPrunePlan, String> {
+    let snapshots = list_snapshots(destination)?;
+    let mut verified: Vec<Snapshot> = snapshots
+        .iter()
+        .filter(|item| item.verified)
+        .cloned()
+        .collect();
+    verified.sort_by(|left, right| right.created_at.cmp(&left.created_at));
+    let split = keep.min(verified.len());
+    let retain = verified[..split].to_vec();
+    let remove = verified[split..].to_vec();
+    Ok(SnapshotPrunePlan {
+        keep,
+        retain,
+        remove,
+    })
+}
+
+pub fn prune_snapshots(
+    destination: &str,
+    keep: usize,
+    confirm: bool,
+) -> Result<SnapshotPrunePlan, String> {
+    let plan = plan_snapshot_prune(destination, keep)?;
+    if !confirm {
+        return Err(
+            "CONFIRMATION_REQUIRED: Snapshot pruning requires explicit confirmation.".into(),
+        );
+    }
+    for snapshot in &plan.remove {
+        let path = PathBuf::from(&snapshot.path);
+        if !path.is_dir() {
+            return Err(format!(
+                "PRUNE_TARGET: Snapshot path is not a directory: {}",
+                snapshot.path
+            ));
+        }
+        fs::remove_dir_all(&path).map_err(|error| format!("PRUNE_SNAPSHOT: {error}"))?;
+    }
+    plan_snapshot_prune(destination, keep)
+}
+
 pub fn restore_snapshot(snapshot_path: &str, destination: &str) -> Result<RestoreResult, String> {
     let snapshot = verify_snapshot_path(Path::new(snapshot_path))?;
     let target = PathBuf::from(destination);
@@ -1823,6 +1875,31 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(backups).unwrap();
         fs::remove_dir_all(target).unwrap();
+    }
+
+    #[test]
+    fn snapshot_pruning_requires_confirmation_and_preserves_invalid_entries() {
+        let root = fixture();
+        fs::write(root.join("Note.md"), "safe").unwrap();
+        let backups = fixture();
+        let snapshot = create_snapshot(&root, backups.to_str().unwrap()).unwrap();
+        let invalid = backups.join("corrupt-entry");
+        fs::create_dir_all(&invalid).unwrap();
+        fs::write(invalid.join("manifest.json"), "not-json").unwrap();
+
+        let plan = plan_snapshot_prune(backups.to_str().unwrap(), 0).unwrap();
+        assert_eq!(plan.remove.len(), 1);
+        assert!(!plan.retain.iter().any(|item| item.path == snapshot.path));
+        assert!(prune_snapshots(backups.to_str().unwrap(), 0, false)
+            .unwrap_err()
+            .starts_with("CONFIRMATION_REQUIRED:"));
+        assert!(Path::new(&snapshot.path).exists());
+        let after = prune_snapshots(backups.to_str().unwrap(), 0, true).unwrap();
+        assert!(after.remove.is_empty());
+        assert!(!Path::new(&snapshot.path).exists());
+        assert!(invalid.exists());
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(backups).unwrap();
     }
 
     #[test]
