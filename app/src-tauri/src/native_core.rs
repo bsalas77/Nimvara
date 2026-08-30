@@ -1,3 +1,4 @@
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -168,6 +169,15 @@ pub struct WorkspaceFile {
     pub extension: String,
     pub bytes: u64,
     pub modified_at: u128,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachmentPreview {
+    pub path: String,
+    pub mime: String,
+    pub bytes: u64,
+    pub data: String,
 }
 
 #[derive(Serialize)]
@@ -1045,6 +1055,48 @@ pub fn reveal_file(root: &Path, relative: &str) -> Result<String, String> {
     Ok(normalized)
 }
 
+pub fn read_attachment_preview(root: &Path, relative: &str) -> Result<AttachmentPreview, String> {
+    let normalized = clean_snapshot_relative(relative)?;
+    let candidate = root.join(normalized.split('/').collect::<PathBuf>());
+    let metadata = fs::symlink_metadata(&candidate)
+        .map_err(|_| "ATTACHMENT_NOT_FOUND: Attachment was not found.".to_string())?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err("ATTACHMENT_NOT_FOUND: Attachment was not found.".into());
+    }
+    const MAX_PREVIEW_BYTES: u64 = 16 * 1024 * 1024;
+    if metadata.len() > MAX_PREVIEW_BYTES {
+        return Err("ATTACHMENT_TOO_LARGE: Preview is limited to 16 MiB.".into());
+    }
+    let extension = candidate
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let mime = match extension.as_str() {
+        "pdf" => "application/pdf",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "svg" => "image/svg+xml",
+        "mp3" => "audio/mpeg",
+        "wav" => "audio/wav",
+        "ogg" => "audio/ogg",
+        _ => {
+            return Err(
+                "ATTACHMENT_UNSUPPORTED: This attachment type has no safe inline preview.".into(),
+            )
+        }
+    };
+    let bytes = fs::read(&candidate).map_err(|error| format!("ATTACHMENT_READ: {error}"))?;
+    Ok(AttachmentPreview {
+        path: normalized,
+        mime: mime.into(),
+        bytes: bytes.len() as u64,
+        data: base64::engine::general_purpose::STANDARD.encode(bytes),
+    })
+}
+
 pub fn read_note(root: &Path, relative: &str) -> Result<Note, String> {
     let (absolute, safe) = resolve_note(root, relative)?;
     let bytes = fs::read(&absolute).map_err(|error| format!("READ_NOTE: {error}"))?;
@@ -1900,6 +1952,24 @@ mod tests {
         assert!(invalid.exists());
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(backups).unwrap();
+    }
+
+    #[test]
+    fn attachment_preview_is_bounded_typed_and_read_only() {
+        let root = fixture();
+        let attachment = root.join("image.png");
+        fs::write(&attachment, [137, 80, 78, 71]).unwrap();
+        let before = fs::read(&attachment).unwrap();
+        let preview = read_attachment_preview(&root, "image.png").unwrap();
+        assert_eq!(preview.mime, "image/png");
+        assert_eq!(preview.bytes, 4);
+        assert!(!preview.data.is_empty());
+        assert_eq!(fs::read(&attachment).unwrap(), before);
+        fs::write(root.join("script.js"), "alert(1)").unwrap();
+        assert!(read_attachment_preview(&root, "script.js")
+            .unwrap_err()
+            .starts_with("ATTACHMENT_UNSUPPORTED:"));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

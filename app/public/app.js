@@ -67,6 +67,7 @@ async function api(url, options = {}) {
       if (method === "GET" && parsed.pathname === "/api/workspace-state") return window.__TAURI__.core.invoke("native_workspace_state", { path: parsed.searchParams.get("path") });
       if (method === "POST" && parsed.pathname === "/api/file/save-copy") return window.__TAURI__.core.invoke("native_save_conflict_copy", { path: input.path, content: input.content });
       if (method === "POST" && parsed.pathname === "/api/attachment/reveal") return window.__TAURI__.core.invoke("native_reveal_file", { path: input.path });
+      if (method === "GET" && parsed.pathname === "/api/attachment/preview") return window.__TAURI__.core.invoke("native_read_attachment_preview", { path: parsed.searchParams.get("path") });
       if (method === "GET" && parsed.pathname === "/api/note-context") return window.__TAURI__.core.invoke("native_note_context", { path: parsed.searchParams.get("path") });
       if (method === "POST" && parsed.pathname === "/api/recovery") return window.__TAURI__.core.invoke("native_write_recovery", { path: input.path, content: input.content, expectedHash: input.expectedHash ?? null });
       if (method === "GET" && parsed.pathname === "/api/recovery") return window.__TAURI__.core.invoke("native_read_recovery", { path: parsed.searchParams.get("path") });

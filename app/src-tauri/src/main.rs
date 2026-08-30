@@ -489,6 +489,14 @@ fn native_reveal_file(
 }
 
 #[tauri::command]
+fn native_read_attachment_preview(
+    path: String,
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::AttachmentPreview, String> {
+    native_core::read_attachment_preview(&active_root(&state)?, &path)
+}
+
+#[tauri::command]
 fn native_note_context(
     path: String,
     state: tauri::State<'_, native_core::NativeWorkspace>,
@@ -747,6 +755,7 @@ fn main() {
             native_workspace_state,
             native_save_conflict_copy,
             native_reveal_file,
+            native_read_attachment_preview,
             native_note_context,
             native_workspace_dashboard,
             native_compatibility_report,

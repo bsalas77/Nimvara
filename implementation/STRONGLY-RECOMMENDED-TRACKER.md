@@ -3,7 +3,7 @@
 | # | Area | Current state | Next concrete work |
 |---|---|---|---|
 | 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible workflow spec; native copy/verify API with manifest and safe rollback | Cancel/progress journal and first-run migration UI |
-| 2 | Attachments | Inventory, safe preservation, import preview, native ingestion preservation, drop-path hint, reveal action | Native byte upload/drop adapter and inline attachment previews |
+| 2 | Attachments | Inventory, safe preservation, import preview, native ingestion preservation, drop-path hint, reveal action, bounded native inline previews | Native byte upload/drop adapter and missing-attachment repair workflow |
 | 3 | Kanban | Markdown task board, persistent filters, drag-to-review status proposals | Saved boards and richer status vocabulary |
 | 4 | Canvas/mind map | Read-only Canvas, generated mind map, reviewed branch proposals, SVG export | Full interactive layout editing with proposal model |
 | 5 | Property/database views | Frontmatter cards/table, persistent query/view, deterministic sort/group utility | Wire saved sort/group controls into UI and add typed values |
