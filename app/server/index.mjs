@@ -227,6 +227,11 @@ export const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune-plan") { const input = await body(request); return send(response, 200, await planSnapshotPrune(input.destination, input.keep)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/prune") { const input = await body(request); return send(response, 200, await pruneSnapshots(input.destination, input.keep, input.confirm)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/encrypt") { const input = await body(request); return send(response, 200, await encryptSnapshot(input.snapshotPath, input.outputPath, input.password)); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/encrypt-now") {
+      const input = await body(request); const snapshot = await createSnapshot(requireWorkspace(), input.snapshotDestination);
+      const encrypted = await encryptSnapshot(snapshot.path, input.outputPath, input.password);
+      return send(response, 200, { snapshot, encrypted });
+    }
     if (request.method === "POST" && url.pathname === "/api/snapshots/encrypted-restore") { const input = await body(request); return send(response, 200, await restoreEncryptedSnapshot(input.encryptedPath, input.destination, input.password)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
       const input = await body(request);
