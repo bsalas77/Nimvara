@@ -1698,6 +1698,11 @@ mod tests {
         assert_eq!(report.markdown_notes, 1);
         assert_eq!(report.wikilinks, 2);
         assert_eq!(report.embeds, 1);
+        assert_eq!(report.missing_attachments, 1);
+        assert_eq!(
+            report.missing_attachment_paths,
+            vec!["Plan.md:7 -> image.png"]
+        );
         assert_eq!(report.callouts, 1);
         assert_eq!(report.frontmatter_notes, 1);
         assert_eq!(report.canvases, 1);
