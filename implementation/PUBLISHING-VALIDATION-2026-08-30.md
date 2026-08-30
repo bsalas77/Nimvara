@@ -16,5 +16,6 @@ The native static publisher now rewrites safe internal Obsidian wikilinks into r
 - `cargo test --manifest-path app/src-tauri/Cargo.toml --locked`: 23 passed, 0 failed, 1 intentional benchmark ignored.
 - Regression test covers an aliased internal link, active HTML escaping, selected-note export, and source-byte preservation.
 
-Remaining publishing work is relative attachment copying/link rewriting, archive packaging, and a polished preview. Those remain separate from this safe link rewrite.
+Referenced workspace-local attachments are now copied losslessly alongside exported notes. Missing, external, traversal, and Markdown targets are skipped safely. Remaining publishing work is archive packaging and a polished preview.
 
+Attachment regression coverage verifies byte-preserving copy of a referenced PNG and source immutability.
