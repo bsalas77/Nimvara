@@ -145,6 +145,7 @@ export async function migrateWorkspace(sourcePath, destinationPath) {
   const entries = await walk(source);
   const manifest = [];
   const progressPath = path.join(destination, ".nimvara-migration-progress.json");
+  const cancelPath = path.join(destination, ".nimvara-migration-cancel");
   const writeProgress = async (phase, completed) => {
     await writeFile(progressPath, JSON.stringify({ schema: 1, phase, completed, total: entries.length, updatedAt: new Date().toISOString() }, null, 2), { flag: "w" });
   };
@@ -162,6 +163,9 @@ export async function migrateWorkspace(sourcePath, destinationPath) {
       if (hash !== verified) throw new NimvaraError("MIGRATION_VERIFY", `Copied file failed verification: ${relative}`);
       manifest.push({ path: relative, bytes: bytes.length, sha256: hash });
       await writeProgress("copying", manifest.length);
+      if (await access(cancelPath).then(() => true).catch(() => false)) {
+        throw new NimvaraError("MIGRATION_CANCELLED", "Migration cancelled by the user.");
+      }
     }
     const report = { schema: 1, source, destination, createdAt: new Date().toISOString(), files: manifest };
     await writeFile(path.join(destination, ".nimvara-migration.json"), JSON.stringify(report, null, 2), { flag: "wx" });
@@ -191,6 +195,12 @@ export async function readMigrationProgress(destinationPath) {
     if (error?.code === "ENOENT" || error instanceof SyntaxError) return null;
     throw new NimvaraError("MIGRATION_PROGRESS", "Migration progress could not be read safely.");
   }
+}
+
+export async function cancelMigration(destinationPath) {
+  const destination = path.resolve(String(destinationPath));
+  await writeFile(path.join(destination, ".nimvara-migration-cancel"), "cancel\n", { flag: "w" });
+  return { requested: true };
 }
 
 export async function readMarkdown(root, relative) {
