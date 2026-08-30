@@ -27,9 +27,19 @@ export function parseFrontmatter(content) {
   for (let index = 1; index < lines.length; index++) {
     if (lines[index].trim() === "---") break;
     const match = lines[index].match(/^([A-Za-z0-9_-]+):\s*(.*?)\s*$/);
-    if (match) result[match[1]] = match[2].replace(/^['"]|['"]$/g, "");
+    if (match) result[match[1]] = parseScalar(match[2].replace(/^['"]|['"]$/g, ""));
   }
   return result;
+}
+
+export function parseScalar(value) {
+  const text = String(value).trim();
+  if (/^(true|false)$/i.test(text)) return text.toLowerCase() === "true";
+  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)) {
+    const number = Number(text);
+    if (Number.isFinite(number)) return number;
+  }
+  return text;
 }
 
 export function filterRecords(records, query) {
