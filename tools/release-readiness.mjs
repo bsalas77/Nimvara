@@ -28,7 +28,7 @@ check("MIGRATION_USABILITY", false, "Requires at least five consented users; syn
 check("TWO_DEVICE_SYNC", false, "Requires a real two-device OneDrive conflict/offline/reconnect matrix.", true);
 check("SIGNING", false, "Requires verified Microsoft/Apple signing identities and protected signing configuration.", true);
 check("PUBLIC_URLS", false, "Requires a controlled HTTPS domain or published repository URLs.", true);
-check("SEARCH_PERFORMANCE", true, "Persistent indexing measures 515 ms for a 10,000-note unchanged reopen and 816 microseconds for warm search; background progress, cancellation, generation isolation, and corrupt-cache recovery are implemented and tested.");
+check("SEARCH_PERFORMANCE", true, "Persistent indexing baseline (release mode, 10,000 synthetic notes) is 1,204 ms for unchanged reopen and 1,643 microseconds for warm search; background progress, cancellation, generation isolation, and corrupt-cache recovery are implemented and tested. Representative real-vault measurements remain required.");
 check("DEPENDENCY_POLICY", existsSync(resolve(root, "app/src-tauri/third_party/glib-0.18.5-patched/PROVENANCE.md")), "RustSec reports zero vulnerability advisories. RUSTSEC-2024-0429 is repaired by the exact reviewed upstream backport, guarded by dependency-tree/source verification; informational GTK3 maintenance warnings remain tracked.");
 
 const artifacts = [
