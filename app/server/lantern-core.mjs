@@ -457,8 +457,19 @@ export async function attachmentDiagnostics(root) {
       const candidate = path.posix.normalize(path.posix.join(path.posix.dirname(note), decoded));
       const safeCandidate = candidate.startsWith("../") || candidate === ".." ? null : candidate.replace(/^\.\//, "");
       if (safeCandidate && attachments.some((file) => file.toLocaleLowerCase() === safeCandidate.toLocaleLowerCase())) continue;
-      const candidates = byName.get(path.posix.basename(decoded).toLocaleLowerCase()) ?? [];
-      diagnostics.push({ source: note, line: reference.line, target: reference.target, syntax: reference.syntax, status: "missing", candidates: [...candidates] });
+      const basename = path.posix.basename(decoded).toLocaleLowerCase();
+      const stem = basename.replace(/\.[^.]+$/, "");
+      const candidates = attachments
+        .map((file) => {
+          const candidateName = path.posix.basename(file).toLocaleLowerCase();
+          const candidateStem = candidateName.replace(/\.[^.]+$/, "");
+          const score = candidateName === basename ? 100 : candidateStem === stem ? 80 : candidateStem.includes(stem) || stem.includes(candidateStem) ? 40 : 0;
+          return { path: file, score };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
+        .slice(0, 10);
+      diagnostics.push({ source: note, line: reference.line, target: reference.target, syntax: reference.syntax, status: "missing", candidates: candidates.map((item) => item.path), rankedCandidates: candidates });
     }
   }
   return { diagnostics, attachmentCount: attachments.length };
