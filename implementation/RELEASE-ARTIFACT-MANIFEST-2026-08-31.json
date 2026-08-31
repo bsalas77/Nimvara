@@ -2,9 +2,9 @@
   "schema": 1,
   "generatedAt": "2026-08-31",
   "artifacts": [
-    { "path": "dist/Nimvara-Setup-0.7.0-dev.exe", "bytes": 4982272, "sha256": "295d10144bfcdd0c725f427dec83c41578abab23f6d4b3ebd90a12383a3d5aa2" },
-    { "path": "dist/Nimvara-0.7.0-dev.msix", "bytes": 4886347, "sha256": "24590955a1d42934efd5589eb0e7825866c773c262a9f259bff41fb082036b36" },
+    { "path": "dist/Nimvara-Setup-0.7.0-dev.exe", "bytes": 4982272, "sha256": "16000ceaeef92a770b9a684378d96528583a20499eacdece9238df6658350ac9" },
+    { "path": "dist/Nimvara-0.7.0-dev.msix", "bytes": 4886916, "sha256": "a56a34d32fec105ff0f173e353dfb52ded050d9f9aa805822bf18ad31d6f0714" },
     { "path": "dist/Nimvara_0.7.0_amd64.deb", "bytes": 5688952, "sha256": "1c23e563bdf20116613816d77059301ca1fbf5f8993fa1a5986fe6f91dab0ee1" },
-    { "path": "dist/nimvara.cdx.json", "bytes": 168371, "sha256": "0d0168c4ef9acf81401eede8c6d96234e7060ed24aff7233171eea24abff8857" }
+    { "path": "dist/nimvara.cdx.json", "bytes": 168371, "sha256": "6cf2b2820cd70493c34ef9b521f70e295f7189bf66ac4388c7c344edbe701c4f" }
   ]
 }
