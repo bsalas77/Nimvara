@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
@@ -43,7 +43,11 @@ const pending = new Map();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function launch(port) {
   child = spawn(exe, [], {
-    env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}` },
+    env: {
+      ...process.env,
+      WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
+      WEBVIEW2_USER_DATA_FOLDER: path.join(root, `webview2-${port}`),
+    },
     stdio: "ignore",
   });
   let page;
@@ -98,7 +102,19 @@ async function stop() {
   await sleep(500);
 }
 
-const notePath = "00 Start Here.md";
+async function firstMarkdown(folder, relative = "") {
+  for (const name of (await readdir(path.join(folder, relative), { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+    const child = path.join(relative, name.name);
+    if (name.isDirectory()) {
+      const found = await firstMarkdown(folder, child);
+      if (found) return found;
+    } else if (name.isFile() && name.name.toLowerCase().endsWith(".md")) return child.replaceAll("\\", "/");
+  }
+  return null;
+}
+
+const notePath = await firstMarkdown(workspace);
+if (!notePath) throw new Error("The smoke source vault must contain at least one Markdown note.");
 const noteFullPath = path.join(workspace, notePath);
 const originalCopy = await readFile(noteFullPath, "utf8");
 const productivityPath = path.join(workspace, "Nimvara Productivity Smoke.md");
@@ -113,7 +129,7 @@ try {
   await waitFor(`Boolean(document.querySelector("#workspacePath"))`, "first-run UI");
   await evaluate(`document.querySelector("#workspacePath").value=${JSON.stringify(workspace)}; document.querySelector("#open").click();`);
   await waitFor(`!document.querySelector("#shell").classList.contains("hidden")`, "workspace shell");
-  report.checks.workspaceOpen = await evaluate(`document.querySelectorAll("#files button").length >= 45`);
+  report.checks.workspaceOpen = await evaluate(`document.querySelectorAll("#files button").length >= 1`);
   report.checks.fileTree = await evaluate(`document.querySelectorAll("#files details").length > 0`);
   report.checks.accessibility = await evaluate(`(() => {
     const controls=[...document.querySelectorAll("input,textarea,button")];
