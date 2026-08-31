@@ -79,6 +79,8 @@ jobs:
           .\packaging\windows\build-msix.ps1
       - name: Generate SBOM
         run: node tools/generate-sbom.mjs
+      - name: Verify SBOM structure and provenance
+        run: node tools/verify-sbom.mjs
       - name: Generate Windows artifact checksums
         shell: powershell
         run: |
