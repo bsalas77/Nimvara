@@ -222,6 +222,15 @@ pub fn verify_model(path: &str, manifest: ModelManifest) -> Result<ModelVerifica
     {
         return Err("MODEL_MANIFEST: Model metadata is incomplete.".into());
     }
+    let source_url = Url::parse(manifest.source_url.trim())
+        .map_err(|_| "MODEL_SOURCE: Model source URL must be valid HTTPS.".to_string())?;
+    if source_url.scheme() != "https"
+        || source_url.host_str().is_none()
+        || source_url.username() != ""
+        || source_url.password().is_some()
+    {
+        return Err("MODEL_SOURCE: Model source URL must be HTTPS without credentials.".into());
+    }
     let metadata = fs::metadata(path).map_err(|error| format!("MODEL_FILE: {error}"))?;
     if !metadata.is_file() || metadata.len() != manifest.bytes {
         return Err("MODEL_SIZE: Model file size does not match the reviewed manifest.".into());
@@ -671,6 +680,22 @@ mod tests {
         let mismatch_error =
             verify_model(path.to_str().unwrap(), mismatch).expect_err("mismatched hash must fail");
         assert!(mismatch_error.starts_with("MODEL_HASH:"));
+        let mut unsafe_source = ModelManifest {
+            id: "synthetic-test".into(),
+            name: "Synthetic test model".into(),
+            license: "test-only".into(),
+            source_url: "http://example.invalid/model.gguf".into(),
+            sha256: format!("{:x}", Sha256::digest(bytes)),
+            bytes: bytes.len() as u64,
+            minimum_memory_bytes: 0,
+        };
+        assert!(verify_model(path.to_str().unwrap(), unsafe_source.clone())
+            .unwrap_err()
+            .starts_with("MODEL_SOURCE:"));
+        unsafe_source.source_url = "https://user:secret@example.invalid/model.gguf".into();
+        assert!(verify_model(path.to_str().unwrap(), unsafe_source)
+            .unwrap_err()
+            .starts_with("MODEL_SOURCE:"));
         fs::remove_file(path).unwrap();
     }
 
