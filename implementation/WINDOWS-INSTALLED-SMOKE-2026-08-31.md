@@ -21,3 +21,12 @@ node tools/windows-installed-ui-smoke.mjs `
 ```
 
 The harness remains source-preserving and cleans its disposable workspace on exit.
+
+## Follow-up
+
+The native startup path now explicitly calls `show`, `set_focus`, `set_size`, and
+`set_position`. The rebuilt binary still reports a 50×50 restored frame under the
+current Windows desktop session, so this is now isolated to window-state restoration
+or WebView2/Tauri initialization rather than installer payload extraction. Do not
+mark the packaged UI gate complete until a clean profile or manual desktop check
+confirms the window opens at the configured size.
