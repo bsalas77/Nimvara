@@ -2073,6 +2073,27 @@ mod tests {
     }
 
     #[test]
+    fn canvas_save_requires_current_hash_and_verifies_bytes() {
+        let root = fixture();
+        fs::write(
+            root.join("Plan.canvas"),
+            r#"{"nodes":[{"id":"a","x":0,"y":0}],"edges":[]}"#,
+        )
+        .unwrap();
+        let opened = read_canvas(&root, "Plan.canvas").unwrap();
+        let mut next = opened.clone();
+        next["nodes"][0]["x"] = serde_json::json!(25);
+        let saved = save_canvas(&root, "Plan.canvas", &next, opened["hash"].as_str()).unwrap();
+        assert!(!saved.unchanged);
+        assert_eq!(
+            read_canvas(&root, "Plan.canvas").unwrap()["nodes"][0]["x"],
+            25
+        );
+        assert!(save_canvas(&root, "Plan.canvas", &next, Some("stale")).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn unicode_save_read_search_and_conflict_are_lossless() {
         let root = fixture();
         let saved = save_note(&root, "研究/Résumé.md", "# Café 🏮\n\nNeedle phrase", None).unwrap();
