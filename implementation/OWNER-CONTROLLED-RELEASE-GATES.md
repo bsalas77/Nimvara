@@ -15,3 +15,20 @@ Engineering cannot truthfully complete these gates without the owner's identity,
 11. Enroll in the Apple Developer Program and provide macOS/iPad signing access.
 
 None of these may be marked complete from local code or simulated evidence.
+
+## Current handoff state — 2026-08-31
+
+The local readiness report is **29/39**. The remaining owner-controlled gates are:
+
+- `LICENSE_SELECTED` and `FORMAL_NAME_CLEARANCE`
+- `NON_DEV_VERSION` and Windows Store publisher identity
+- `MACOS_ARTIFACT`
+- `INDEPENDENT_SECURITY_REVIEW`
+- `HUMAN_ACCESSIBILITY_REVIEW`
+- `MIGRATION_USABILITY`
+- `TWO_DEVICE_SYNC`
+- `SIGNING` and `PUBLIC_URLS`
+
+The local evidence is reproducible with `node tools/release-readiness.mjs` and
+`node tools/verify-release-artifacts.mjs`. These commands report evidence; they do
+not bypass any owner-controlled gate.
