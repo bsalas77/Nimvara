@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { sha256, NimvaraError } from "./lantern-core.mjs";
 import { verifyExtensionSignature } from "./extension-manifest.mjs";
@@ -33,4 +33,18 @@ export async function verifyExtensionPackage(packagePath, trustedPublicKeys = []
     if (content.length > 5 * 1024 * 1024 || total > MAX_PACKAGE_BYTES || Number(entry?.bytes) !== content.length || sha256(content) !== String(entry?.sha256 || "").toLowerCase()) throw new NimvaraError("EXTENSION_PACKAGE_HASH", `Extension package verification failed for ${filePath}.`);
   }
   return { verified: true, id: signature.id, version: signature.version, files: decoded.files.length, bytes: total, extracted: false };
+}
+
+export async function installVerifiedExtensionPackage(packagePath, installRoot, trustedPublicKeys = []) {
+  const verified = await verifyExtensionPackage(packagePath, trustedPublicKeys);
+  const decoded = JSON.parse(await readFile(path.resolve(packagePath), "utf8"));
+  const target = path.resolve(installRoot, verified.id, verified.version);
+  try { await stat(target); throw new NimvaraError("EXTENSION_PACKAGE_EXISTS", "That extension version is already installed."); } catch (error) { if (error.code !== "ENOENT" && error.code !== "EXTENSION_PACKAGE_EXISTS") throw error; if (error.code === "EXTENSION_PACKAGE_EXISTS") throw error; }
+  const staging = `${target}.partial-${process.pid}-${Date.now()}`;
+  try {
+    await mkdir(staging, { recursive: true });
+    for (const entry of decoded.files) { const output = path.join(staging, ...safePackagePath(entry.path).split("/")); await mkdir(path.dirname(output), { recursive: true }); await writeFile(output, Buffer.from(entry.data, "base64"), { flag: "wx" }); }
+    await rename(staging, target);
+  } catch (error) { await rm(staging, { recursive: true, force: true }); throw new NimvaraError("EXTENSION_PACKAGE_INSTALL", error.message); }
+  return { ...verified, installPath: target, enabled: false, executed: false };
 }

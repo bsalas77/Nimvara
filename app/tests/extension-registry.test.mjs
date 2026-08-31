@@ -3,11 +3,11 @@ import { test } from "node:test";
 import { listExtensions, registerExtension, setExtensionEnabled, trustExtensionKey } from "../server/extension-registry.mjs";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { verifyExtensionSignature } from "../server/extension-manifest.mjs";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { sha256 } from "../server/lantern-core.mjs";
-import { verifyExtensionPackage } from "../server/extension-package.mjs";
+import { installVerifiedExtensionPackage, verifyExtensionPackage } from "../server/extension-package.mjs";
 
 test("extension registry requires validation and keeps new extensions disabled", () => {
   const id = `test.reader.${Date.now()}`;
@@ -52,6 +52,11 @@ test("signed extension package verification is bounded and never extracts files"
     await writeFile(packagePath, JSON.stringify({ manifest: { ...manifest, signature }, files: [{ path: "dist/main.js", bytes: content.length, sha256: sha256(content), data: content.toString("base64") }] }));
     const trusted = publicKey.export({ type: "spki", format: "pem" });
     assert.deepEqual(await verifyExtensionPackage(packagePath, [trusted]), { verified: true, id: manifest.id, version: manifest.version, files: 1, bytes: content.length, extracted: false });
+    const installed = await installVerifiedExtensionPackage(packagePath, path.join(folder, "extensions"), [trusted]);
+    assert.equal(installed.enabled, false);
+    assert.equal(installed.executed, false);
+    assert.equal((await readFile(path.join(installed.installPath, "dist", "main.js"), "utf8")), "safe extension payload");
+    await assert.rejects(installVerifiedExtensionPackage(packagePath, path.join(folder, "extensions"), [trusted]), /already installed/);
     await assert.rejects(verifyExtensionPackage(packagePath, []), /missing or untrusted/);
   } finally { await rm(folder, { recursive: true, force: true }); }
 });

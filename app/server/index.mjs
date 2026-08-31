@@ -48,7 +48,7 @@ import { listExtensions, registerExtension, setExtensionEnabled, trustExtensionK
 import { getMobileCapabilities } from "./mobile-capabilities.mjs";
 import { listKanbanBoards, saveKanbanBoard } from "./kanban-boards.mjs";
 import { encryptSnapshot, restoreEncryptedSnapshot, rotateEncryptedSnapshot } from "./encrypted-snapshot.mjs";
-import { verifyExtensionPackage } from "./extension-package.mjs";
+import { verifyExtensionPackage, installVerifiedExtensionPackage } from "./extension-package.mjs";
 
 let workspace = null;
 let workspaceWatcher = null;
@@ -253,6 +253,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/extensions/trusted-keys") return send(response, 200, listTrustedExtensionKeys());
     if (request.method === "POST" && url.pathname === "/api/extensions/trusted-keys") { const input = await body(request); return send(response, 200, trustExtensionKey(input.publicKey)); }
     if (request.method === "POST" && url.pathname === "/api/extensions/package/verify") { const input = await body(request); return send(response, 200, await verifyExtensionPackage(input.packagePath, input.trustedPublicKeys)); }
+    if (request.method === "POST" && url.pathname === "/api/extensions/package/install") { const input = await body(request); return send(response, 200, await installVerifiedExtensionPackage(input.packagePath, input.installRoot, input.trustedPublicKeys)); }
     if (request.method === "GET" && url.pathname === "/api/capabilities/mobile") return send(response, 200, getMobileCapabilities());
     if (request.method === "GET" && url.pathname === "/api/kanban/boards") return send(response, 200, await listKanbanBoards(requireWorkspace()));
     if (request.method === "POST" && url.pathname === "/api/kanban/boards") { const input = await body(request); return send(response, 200, await saveKanbanBoard(requireWorkspace(), input)); }
