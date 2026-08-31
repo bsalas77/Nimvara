@@ -1,0 +1,23 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+const root = path.join(import.meta.dirname, "..", "..");
+
+test("Windows packaging is per-user and preserves user data on uninstall", async () => {
+  const installer = await readFile(path.join(root, "packaging", "windows", "NimvaraSetup.cs"), "utf8");
+  const uninstaller = await readFile(path.join(root, "packaging", "windows", "NimvaraUninstall.cs"), "utf8");
+  assert.match(installer, /CurrentUser|currentUser/i);
+  assert.match(installer, /NimvaraUninstall\.exe/);
+  assert.match(uninstaller, /workspaces.*backups.*not be deleted/i);
+  assert.doesNotMatch(uninstaller, /SpecialFolder\.MyDocuments|OneDrive|\.md|\.canvas/i);
+});
+
+test("Windows package metadata uses explicit development identity", async () => {
+  const manifest = await readFile(path.join(root, "packaging", "windows", "AppxManifest.template.xml"), "utf8");
+  const config = await readFile(path.join(root, "app", "src-tauri", "tauri.conf.json"), "utf8");
+  assert.match(manifest, /Identity Name="\{\{IDENTITY\}\}" Publisher="\{\{PUBLISHER\}\}"/);
+  assert.match(config, /"identifier":\s*"com\.nimvara\.desktop"/);
+  assert.match(config, /"installMode":\s*"currentUser"/);
+});
