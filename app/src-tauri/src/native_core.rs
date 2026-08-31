@@ -2396,6 +2396,24 @@ mod tests {
     }
 
     #[test]
+    fn diagnostics_report_is_aggregate_only() {
+        let root = fixture();
+        fs::create_dir_all(root.join("Private Projects")).unwrap();
+        fs::write(root.join("Private Projects").join("Secret.md"), "Sensitive note content").unwrap();
+        fs::write(root.join("image.png"), [1_u8, 2, 3]).unwrap();
+        let report = diagnostics_report(&root, "0.7.0-test").unwrap();
+        let serialized = report.to_string();
+        assert_eq!(report["workspace"]["fileCount"], 2);
+        assert_eq!(report["workspace"]["markdownCount"], 1);
+        assert_eq!(report["workspace"]["attachmentCount"], 1);
+        assert!(!serialized.contains("Private Projects"));
+        assert!(!serialized.contains("Secret.md"));
+        assert!(!serialized.contains("Sensitive note content"));
+        assert!(!serialized.contains(root.to_string_lossy().as_ref()));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn recovery_journal_is_atomic_scoped_and_clearable() {
         let root = fixture();
         fs::write(root.join("Note.md"), "disk").unwrap();
