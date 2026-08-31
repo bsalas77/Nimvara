@@ -2,7 +2,7 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     fs::{self, OpenOptions},
     io::Write,
     path::{Component, Path, PathBuf},
@@ -1097,6 +1097,32 @@ pub fn workspace_state(root: &Path, relative: Option<&str>) -> Result<WorkspaceS
         files,
         note,
     })
+}
+
+/// Aggregate-only support diagnostics for the packaged desktop application.
+/// Individual paths, names, contents, and hashes are deliberately discarded.
+pub fn diagnostics_report(root: &Path, app_version: &str) -> Result<serde_json::Value, String> {
+    let files = workspace_files(root)?;
+    let mut by_extension = BTreeMap::<String, usize>::new();
+    let mut markdown_count = 0_usize;
+    let mut attachment_count = 0_usize;
+    let mut total_bytes = 0_u64;
+    let mut largest_file_bytes = 0_u64;
+    let mut max_path_depth = 0_usize;
+    for file in &files {
+        total_bytes = total_bytes.saturating_add(file.bytes);
+        largest_file_bytes = largest_file_bytes.max(file.bytes);
+        max_path_depth = max_path_depth.max(file.path.split('/').count());
+        *by_extension.entry(if file.extension.is_empty() { "(none)".into() } else { file.extension.clone() }).or_default() += 1;
+        if file.kind == "markdown" { markdown_count += 1; } else { attachment_count += 1; }
+    }
+    Ok(serde_json::json!({
+        "schema": 1,
+        "generatedAt": OffsetDateTime::now_utc().format(&Rfc3339).map_err(|error| format!("DIAGNOSTICS_TIME: {error}"))?,
+        "appVersion": app_version.chars().take(32).collect::<String>(),
+        "runtime": { "platform": std::env::consts::OS, "arch": std::env::consts::ARCH },
+        "workspace": { "fileCount": files.len(), "markdownCount": markdown_count, "attachmentCount": attachment_count, "totalBytes": total_bytes, "largestFileBytes": largest_file_bytes, "maxPathDepth": max_path_depth, "byExtension": by_extension }
+    }))
 }
 
 pub fn save_conflict_copy(

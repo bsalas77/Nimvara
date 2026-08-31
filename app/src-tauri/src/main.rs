@@ -608,6 +608,13 @@ fn native_status(
 }
 
 #[tauri::command]
+fn native_diagnostics(
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<serde_json::Value, String> {
+    native_core::diagnostics_report(&active_root(&state)?, "0.7.0-dev")
+}
+
+#[tauri::command]
 fn native_ai_ask(
     request: native_ai::AiRequest,
     state: tauri::State<'_, native_core::NativeWorkspace>,
@@ -790,6 +797,7 @@ fn main() {
             native_read_recovery,
             native_clear_recovery,
             native_status,
+            native_diagnostics,
             native_ai_ask,
             native_ai_detect,
             native_ai_hardware,
