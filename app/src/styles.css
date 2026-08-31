@@ -35,3 +35,4 @@ footer { grid-column: 1 / 4; padding: 5px 12px; background: #161d25; border-top:
 .safety dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; }
 .safety dt { color: #8295a5; }.safety dd { margin: 0; color: #dfe7ef; text-align: right; }
 .hint { line-height: 1.45; color: #8295a5 !important; }
+.compact-ui button,button{padding:6px 10px;border-radius:6px;font-size:13px}input,textarea,select{padding:7px 8px;border-radius:6px;font-size:13px}.actions{gap:7px;margin-top:12px}.actions.compact{margin:6px 0 10px}.sidebar,.inspector{padding:10px}.sidebar section,.inspector section{margin-top:10px;padding-top:9px}.editor{padding:14px}.editor-head{margin-bottom:8px}.editor-head h1{font-size:18px}.editor textarea{padding:16px}.view-actions{gap:4px}.view-actions button{padding:5px 8px;font-size:12px}.badges{gap:4px}.badges span{padding:3px 6px;font-size:10px}

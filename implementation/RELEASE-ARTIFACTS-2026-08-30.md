@@ -4,10 +4,10 @@ Fresh local release audit recorded these artifacts:
 
 | Artifact | Bytes | SHA-256 | Local status |
 |---|---:|---|---|
-| `dist/Nimvara-Setup-0.7.0-dev.exe` | 4,982,272 | `16000ceaeef92a770b9a684378d96528583a20499eacdece9238df6658350ac9` | Rebuilt 2026-08-30 from current UI source; unsigned development build |
-| `dist/Nimvara-0.7.0-dev.msix` | 4,886,916 | `a56a34d32fec105ff0f173e353dfb52ded050d9f9aa805822bf18ad31d6f0714` | Rebuilt 2026-08-30 from current UI source; unsigned development package |
+| `dist/Nimvara-Setup-0.7.0-dev.exe` | 4,982,272 | `9ad7667dff0f0afd0b2ddee3aaf785651ed53d97ef4c82ba8b03b071e42082da` | Rebuilt 2026-08-30 from current UI source; unsigned development build |
+| `dist/Nimvara-0.7.0-dev.msix` | 4,886,974 | `9c2b54832a6f39ca92d5301469bb13a9d8d5634f2f9d2ad9b50ef889ef1939cf` | Rebuilt 2026-08-30 from current UI source; unsigned development package |
 | `dist/Nimvara_0.7.0_amd64.deb` | 5,688,952 | `1c23e563bdf20116613816d77059301ca1fbf5f8993fa1a5986fe6f91dab0ee1` | Present; native Linux GUI install remains unqualified |
-| `dist/nimvara.cdx.json` | 168,371 | `6cf2b2820cd70493c34ef9b521f70e295f7189bf66ac4388c7c344edbe701c4f` | Present, 480-component SBOM; npm audit found 0 high-severity vulnerabilities |
+| `dist/nimvara.cdx.json` | 168,371 | `82666a1778573105a35a8a726868f73f9cbe4c68f2f31203acb539a7a73bb352` | Present, 480-component SBOM; npm audit found 0 high-severity vulnerabilities |
 
 This artifact record preserves the 2026-08-31 build evidence. Its embedded release-count sentence below is historical and is superseded by the current report in `dist/release-readiness.json` (29/39) and `implementation/LOCAL-GATE-VALIDATION-2026-08-30.md`. Authenticode status for the Windows installer is `NotSigned`, as expected for this development artifact. The SBOM is regenerated from locked Cargo/npm manifests; signed provenance and independent review remain open.
 
