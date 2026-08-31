@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { listExtensions, registerExtension, setExtensionEnabled } from "../server/extension-registry.mjs";
+import { listExtensions, registerExtension, setExtensionEnabled, trustExtensionKey } from "../server/extension-registry.mjs";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { verifyExtensionSignature } from "../server/extension-manifest.mjs";
 
@@ -23,4 +23,8 @@ test("extension signatures verify only against supplied trusted keys and canonic
   assert.equal(verified.signatureVerified, true);
   assert.equal(verifyExtensionSignature({ ...manifest, signature: `${signature.slice(0, -2)}AA` }, [publicKey.export({ type: "spki", format: "pem" })]).signatureVerified, false);
   assert.equal(verifyExtensionSignature({ ...manifest, signature }, []).signatureVerified, false);
+  const record = registerExtension({ ...manifest, signature });
+  assert.equal(record.signatureVerified, false);
+  trustExtensionKey(publicKey.export({ type: "spki", format: "pem" }));
+  assert.equal(listExtensions().find((item) => item.id === manifest.id).signatureVerified, true);
 });
