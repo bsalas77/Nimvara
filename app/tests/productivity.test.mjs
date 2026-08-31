@@ -67,5 +67,5 @@ test("property changes remain scalar reviewable Markdown proposals", () => {
   const proposal = proposePropertyEdit("# Note", "status", "active");
   assert.match(proposal.content, /^---\nstatus: active\n---/);
   assert.throws(() => proposePropertyEdit("# Note", "bad key", "x"), /Property names/);
-  assert.throws(() => proposePropertyEdit("# Note", "status", "[unsafe]"), /plain scalar/);
+  assert.throws(() => proposePropertyEdit("# Note", "status", "{unsafe}"), /plain scalar/);
 });

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterRecords, organizeRecords, parseFrontmatter, parseScalar } from "../public/productivity.js";
+import { filterRecords, organizeRecords, parseFrontmatter, parseScalar, proposePropertyEdit } from "../public/productivity.js";
 
 test("frontmatter conservatively parses booleans and finite numbers", () => {
   const properties = parseFrontmatter("---\npriority: 10\narchived: false\nratio: 1.5\nwhen: 2026-08-30\n---");
@@ -11,6 +11,7 @@ test("frontmatter conservatively parses booleans and finite numbers", () => {
   assert.equal(parseScalar("001"), "001");
   assert.deepEqual(parseScalar("[work, urgent, 3]"), ["work", "urgent", 3]);
   assert.deepEqual(parseScalar("[]"), []);
+  assert.match(proposePropertyEdit("# Note", "tags", "[work, urgent]").content, /tags: \[work, urgent\]/);
 });
 
 test("typed property values filter and sort predictably", () => {

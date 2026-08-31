@@ -101,7 +101,8 @@ export function proposeKanbanMove(content, line, expectedText, targetColumn) {
 export function proposePropertyEdit(content, key, value) {
   const safeKey = String(key).trim(), safeValue = String(value).replace(/[\r\n]+/g, " ").trim();
   if (!/^[A-Za-z0-9_-]+$/.test(safeKey)) throw new Error("Property names may contain letters, numbers, underscore, and hyphen.");
-  if (/^[\[\]{},&*!|>@`]/.test(safeValue)) throw new Error("Use a plain scalar property value.");
+  const listValue = safeValue.startsWith("[") && safeValue.endsWith("]") && safeValue.length <= 800 && safeValue.slice(1, -1).split(",").every((item) => /^[A-Za-z0-9 _.-]*$/.test(item.trim()));
+  if (/^[\[\]{},&*!|>@`]/.test(safeValue) && !listValue) throw new Error("Use a plain scalar or bounded list property value.");
   const lines = String(content).split(/\r?\n/);
   if (lines[0] !== "---") lines.unshift("---", `${safeKey}: ${safeValue}`, "---", "");
   else {
