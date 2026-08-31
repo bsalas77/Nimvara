@@ -33,6 +33,14 @@ The local evidence is reproducible with `node tools/release-readiness.mjs` and
 `node tools/verify-release-artifacts.mjs`. These commands report evidence; they do
 not bypass any owner-controlled gate.
 
+### Name cross-check (non-legal screening)
+
+An internet screening on 2026-08-30 found no exact Nimvara software result in the
+initial search set. It did surface the similar-looking **NIMAVERA** EU filing (EUIPO
+application 019412614, software/AI classes) and unrelated near matches such as
+Nimvora. This is not trademark clearance: obtain a counsel-led search across the
+USPTO, EUIPO/TMview, WIPO, domains, and app stores before reserving a stable identity.
+
 ## One-command local qualification
 
 On Windows from the repository root, run:
