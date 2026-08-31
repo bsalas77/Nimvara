@@ -23,6 +23,8 @@ The API binds to `127.0.0.1` only. CORS is limited to the Tauri local origin. Re
 
 There is deliberately no MCP write tool. A future reviewed-write capability must remain inside the desktop approval/checkpoint flow and require typed, bounded actions. MCP input and note text are untrusted data.
 
+The disposable JSON-RPC diagnostics smoke command is `node tools/mcp-diagnostics-smoke.mjs`. It creates a temporary note, requests `nimvara_diagnostics`, and asserts that only aggregate data is returned; it never uses or modifies a user vault. Run it outside restricted sandboxes that prohibit child processes.
+
 Example host configuration:
 
 ```json
