@@ -9,3 +9,7 @@
 - Direct launch verification confirms the packaged `Nimvara.exe` remains responsive for at least five seconds. Functional UI smoke assertions still require a supported WebView2 test hook.
 
 Next action: run the smoke harness on a clean Windows test account with WebView2 debugging availability verified, or add a supported test hook to the installer build.
+
+## Latest rerun — 2026-08-31
+
+The same harness was rerun against `dist/Nimvara-Setup-0.7.0-dev.exe` and the read-only Obsidian-vault copy workflow. It again timed out before a WebView2 debugging target appeared. No source-vault files were modified. This confirms the instrumentation gate is repeatable; it does not provide functional UI pass/fail evidence.
