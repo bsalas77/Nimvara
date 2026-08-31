@@ -43,7 +43,7 @@ import {
   previewLocalImport,
   previewUrlCapture
 } from "./ingestion-core.mjs";
-import { validateExtensionManifest } from "./extension-manifest.mjs";
+import { validateExtensionManifest, verifyExtensionSignature } from "./extension-manifest.mjs";
 import { listExtensions, registerExtension, setExtensionEnabled } from "./extension-registry.mjs";
 import { getMobileCapabilities } from "./mobile-capabilities.mjs";
 import { listKanbanBoards, saveKanbanBoard } from "./kanban-boards.mjs";
@@ -246,6 +246,7 @@ export const server = createServer(async (request, response) => {
     }
     if (request.method === "GET" && url.pathname === "/api/ingestion/capabilities") return send(response, 200, ingestionCapabilities);
     if (request.method === "POST" && url.pathname === "/api/extensions/validate") { const input = await body(request); return send(response, 200, validateExtensionManifest(input)); }
+    if (request.method === "POST" && url.pathname === "/api/extensions/verify") { const input = await body(request); return send(response, 200, verifyExtensionSignature(input, input.trustedPublicKeys)); }
     if (request.method === "GET" && url.pathname === "/api/extensions") return send(response, 200, listExtensions());
     if (request.method === "GET" && url.pathname === "/api/capabilities/mobile") return send(response, 200, getMobileCapabilities());
     if (request.method === "GET" && url.pathname === "/api/kanban/boards") return send(response, 200, await listKanbanBoards(requireWorkspace()));
