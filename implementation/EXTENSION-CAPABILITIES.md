@@ -52,7 +52,7 @@ An AI “plugin” should therefore be an adapter, not an unrestricted extension
 6. expose cancellation, size, timeout, and cost limits;
 7. route every durable edit through the existing expected-hash, checkpointed Save path.
 
-Production gates still open: OS credential vault, provider compatibility tests, streaming/cancellation, signed model manifests, adversarial prompt-injection/data-exfiltration testing, measured retrieval/citation quality, and a permission-isolated extension host.
+The extension registry now also supports Ed25519 verification against an explicit session-scoped trusted-key set, bounded package verification, and versioned installation that refuses overwrite and never executes or enables code automatically. Production gates still open: protected OS credential vault for persistent trusted keys, provider compatibility tests, streaming/cancellation, signed model manifests, adversarial prompt-injection/data-exfiltration testing, measured retrieval/citation quality, and a permission-isolated extension host.
 
 ## Common feature order after the trust gate
 
@@ -67,4 +67,3 @@ The competitive backlog orders the next common knowledge-tool capabilities as fo
 7. visual canvas, web extension, handwriting/PDF workflows, collaboration, and a permissioned extension SDK.
 
 Feature breadth must not move ahead of the data-safety and migration gates.
-
