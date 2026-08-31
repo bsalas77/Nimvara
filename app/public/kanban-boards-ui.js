@@ -19,7 +19,7 @@ function wireBoards() {
   const save = document.createElement("button"); save.type = "button"; save.className = "secondary"; save.textContent = "Save workspace board";
   open.after(select, name, columns, save);
   loadBoards(select);
-  select.onchange = () => { const value = select.options[select.selectedIndex]?.textContent || ""; if (value && value !== "Workspace boards…") { const parts = value.match(/^(.+) \((.+)\)$/); if (parts) { name.value = parts[1]; columns.value = parts[2].replaceAll(" · ", ","); } } };
+  select.onchange = async () => { const value = select.options[select.selectedIndex]?.textContent || ""; if (value && value !== "Workspace boards…") { const parts = value.match(/^(.+) \((.+)\)$/); if (parts) { name.value = parts[1]; columns.value = parts[2].replaceAll(" · ", ","); window.nimvaraKanbanColumns = columns.value.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean); if (typeof window.runKanban === "function") await window.runKanban(); } } };
   save.onclick = async () => {
     const cleanName = name.value.trim(), cleanColumns = columns.value.split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
     if (!cleanName || cleanColumns.length < 2) return;
@@ -27,7 +27,7 @@ function wireBoards() {
     try {
       const response = await fetch("/api/kanban/boards", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, name: cleanName, columns: cleanColumns }) });
       if (!response.ok) throw new Error("Board could not be saved.");
-      await loadBoards(select); select.value = id; save.textContent = "Board saved"; setTimeout(() => { save.textContent = "Save workspace board"; }, 1200);
+      await loadBoards(select); select.value = id; window.nimvaraKanbanColumns = cleanColumns; if (typeof window.runKanban === "function") await window.runKanban(); save.textContent = "Board saved"; setTimeout(() => { save.textContent = "Save workspace board"; }, 1200);
     } catch (error) { save.textContent = error.message; setTimeout(() => { save.textContent = "Save workspace board"; }, 1800); }
   };
 }

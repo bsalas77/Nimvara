@@ -12,7 +12,9 @@
     if (!filter) { filter = document.createElement("input"); filter.id = "kanbanFilter"; filter.placeholder = "Filter tasks"; filter.setAttribute("aria-label", "Filter Kanban tasks"); document.getElementById("openKanban")?.after(filter); filter.oninput = () => window.runKanban(); }
     const query = filter.value.trim().toLowerCase();
     const tasks = (dashboard.tasks || []).filter((task) => !query || `${task.text} ${task.path}`.toLowerCase().includes(query));
-    const columns = [...new Set(["backlog", "doing", "review", "done", ...tasks.map(classify)])];
+    const configured = Array.isArray(window.nimvaraKanbanColumns) ? window.nimvaraKanbanColumns : [];
+    const defaults = configured.length ? configured : ["backlog", "doing", "review", "done"];
+    const columns = [...new Set([...defaults, ...tasks.map(classify)])];
     board.innerHTML = columns.map((column) => `<section class="kanban-column" aria-labelledby="kanban-${esc(column)}"><h3 id="kanban-${esc(column)}">${esc(column.replaceAll("_", " "))}</h3>${tasks.filter((task) => classify(task) === column).map((task) => `<article class="kanban-card"><strong>${esc(task.text)}</strong><small>${esc(task.path)} · line ${task.line}</small></article>`).join("") || "<p>No tasks.</p>"}</section>`).join("");
   };
 })();
