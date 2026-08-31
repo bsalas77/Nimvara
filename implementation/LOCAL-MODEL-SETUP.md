@@ -40,3 +40,9 @@ The application keeps local traffic on loopback.
 - Measured load time, tokens/second, peak resident memory, cancellation, thermal behavior,
   and failure recovery for every recommended model.
 
+## Host measurement note — 2026-08-31
+
+The Codex restricted shell could not read Windows hardware inventory (`Get-CimInstance`
+and `systeminfo` returned access denied). No RAM, GPU, VRAM, or throughput claim is made
+for this host. Run the in-app hardware check or a normal-user PowerShell session during
+model qualification, then attach measured results to the matrix above.
