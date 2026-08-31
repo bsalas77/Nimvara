@@ -2,7 +2,7 @@
   "schema": 1,
   "generatedAt": "2026-08-31",
   "artifacts": [
-    { "path": "dist/Nimvara-Setup-0.7.0-dev.exe", "bytes": 4780544, "sha256": "819e68f68d8d09baab8ab57ecb8c015d34cd35aa1c626ff327993dec16437fb8" },
+    { "path": "dist/Nimvara-Setup-0.7.0-dev.exe", "bytes": 4782080, "sha256": "79ffc09c3a1b896e1f3745c63a252d254e2cb77cf55c61840820c8fbaec7cb6b" },
     { "path": "dist/Nimvara-0.7.0-dev.msix", "bytes": 4886974, "sha256": "9c2b54832a6f39ca92d5301469bb13a9d8d5634f2f9d2ad9b50ef889ef1939cf" },
     { "path": "dist/Nimvara_0.7.0_amd64.deb", "bytes": 5688952, "sha256": "1c23e563bdf20116613816d77059301ca1fbf5f8993fa1a5986fe6f91dab0ee1" },
     { "path": "dist/nimvara.cdx.json", "bytes": 168371, "sha256": "82666a1778573105a35a8a726868f73f9cbe4c68f2f31203acb539a7a73bb352" }
