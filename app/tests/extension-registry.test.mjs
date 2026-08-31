@@ -3,6 +3,11 @@ import { test } from "node:test";
 import { listExtensions, registerExtension, setExtensionEnabled, trustExtensionKey } from "../server/extension-registry.mjs";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { verifyExtensionSignature } from "../server/extension-manifest.mjs";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { sha256 } from "../server/lantern-core.mjs";
+import { verifyExtensionPackage } from "../server/extension-package.mjs";
 
 test("extension registry requires validation and keeps new extensions disabled", () => {
   const id = `test.reader.${Date.now()}`;
@@ -34,4 +39,19 @@ test("untrusted signed extensions cannot be enabled", () => {
   const record = registerExtension({ id, name: "Untrusted", version: "1.0.0", permissions: ["notes:read"], signature: Buffer.alloc(64, 7).toString("base64") });
   assert.equal(record.signatureVerified, false);
   assert.throws(() => setExtensionEnabled(id, true), /must verify against a trusted key/);
+});
+
+test("signed extension package verification is bounded and never extracts files", async () => {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  const manifest = { id: "package.reader", name: "Package Reader", version: "1.0.0", permissions: ["notes:read"] };
+  const signature = sign(null, Buffer.from(JSON.stringify(manifest)), privateKey).toString("base64");
+  const content = Buffer.from("safe extension payload");
+  const folder = await mkdtemp(path.join(os.tmpdir(), "nimvara-extension-package-"));
+  try {
+    const packagePath = path.join(folder, "package.json");
+    await writeFile(packagePath, JSON.stringify({ manifest: { ...manifest, signature }, files: [{ path: "dist/main.js", bytes: content.length, sha256: sha256(content), data: content.toString("base64") }] }));
+    const trusted = publicKey.export({ type: "spki", format: "pem" });
+    assert.deepEqual(await verifyExtensionPackage(packagePath, [trusted]), { verified: true, id: manifest.id, version: manifest.version, files: 1, bytes: content.length, extracted: false });
+    await assert.rejects(verifyExtensionPackage(packagePath, []), /missing or untrusted/);
+  } finally { await rm(folder, { recursive: true, force: true }); }
 });
