@@ -20,6 +20,7 @@ export function setExtensionEnabled(extensionId, enabled) {
   const id = String(extensionId || "").trim();
   const record = registry.get(id);
   if (!record) throw new NimvaraError("EXTENSION_NOT_FOUND", "Extension is not registered.");
+  if (enabled && record.signature && !record.signatureVerified) throw new NimvaraError("EXTENSION_SIGNATURE", "A signed extension must verify against a trusted key before it can be enabled.");
   record.enabled = Boolean(enabled);
   return { ...record };
 }

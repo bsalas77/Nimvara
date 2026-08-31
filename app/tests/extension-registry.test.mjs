@@ -28,3 +28,10 @@ test("extension signatures verify only against supplied trusted keys and canonic
   trustExtensionKey(publicKey.export({ type: "spki", format: "pem" }));
   assert.equal(listExtensions().find((item) => item.id === manifest.id).signatureVerified, true);
 });
+
+test("untrusted signed extensions cannot be enabled", () => {
+  const id = `signed.untrusted.${Date.now()}`;
+  const record = registerExtension({ id, name: "Untrusted", version: "1.0.0", permissions: ["notes:read"], signature: Buffer.alloc(64, 7).toString("base64") });
+  assert.equal(record.signatureVerified, false);
+  assert.throws(() => setExtensionEnabled(id, true), /must verify against a trusted key/);
+});
