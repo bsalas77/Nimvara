@@ -48,6 +48,10 @@ jobs:
       - name: Build installer
         shell: powershell
         run: .\packaging\windows\build-installer.ps1
+      - name: Generate and verify SBOM
+        run: |
+          node tools/generate-sbom.mjs
+          node tools/verify-sbom.mjs
       - name: Generate checksum
         shell: powershell
         run: (Get-FileHash .\dist\Nimvara-Setup-0.7.0-dev.exe -Algorithm SHA256).Hash.ToLower() + '  Nimvara-Setup-0.7.0-dev.exe' | Set-Content .\dist\SHA256SUMS.txt
@@ -56,4 +60,5 @@ jobs:
           name: nimvara-windows-unsigned
           path: |
             dist/Nimvara-Setup-0.7.0-dev.exe
+            dist/nimvara.cdx.json
             dist/SHA256SUMS.txt
