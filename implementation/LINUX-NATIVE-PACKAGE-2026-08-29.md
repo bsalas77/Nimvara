@@ -10,3 +10,11 @@ The disposable Docker toolchain now builds the native Tauri Linux package succes
 - Clippy: passed with the project warning policy; third-party GTK/glib warnings remain informational.
 
 The package was built successfully but not launched in a Linux desktop session. Installation, WebKitGTK runtime behavior, desktop integration, and AppImage qualification remain open. macOS still requires a Mac runner or device.
+
+## Fresh container inspection — 2026-08-31
+
+The current `dist/Nimvara_0.7.0_amd64.deb` was inspected inside a clean
+`debian:bookworm` container. Control metadata, dependency declarations, executable
+permissions, desktop entry, icon, and bundled sample workspace were all present.
+This confirms package structure only; GTK/WebKit runtime and graphical launch still
+require an actual Linux desktop session.
