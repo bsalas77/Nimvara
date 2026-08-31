@@ -14,7 +14,9 @@ function showProposal(viewer, canvas, node, x, y) {
   panel.innerHTML = `<strong>Canvas move proposal</strong><p>${escapeHtml(node.id)}: (${before.x}, ${before.y}) → (${x}, ${y})</p><p>No canvas file has been changed.</p>`;
   const download = document.createElement("button"); download.className = "secondary"; download.textContent = "Download proposal";
   download.onclick = () => { const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([`${JSON.stringify(next, null, 2)}\n`], { type: "application/json" })); link.download = `${String(canvas.path || "canvas").split("/").at(-1)}.proposal.json`; link.click(); URL.revokeObjectURL(link.href); };
-  panel.append(download); viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel);
+  const approve = document.createElement("button"); approve.textContent = "Approve and save";
+  approve.onclick = async () => { approve.disabled = true; try { await window.nimvaraApi("/api/canvas/save", { method: "POST", body: JSON.stringify({ path: canvas.path, canvas: next, expectedHash: canvas.hash }) }); panel.innerHTML = "<strong>Canvas saved and verified.</strong><p>The edit was checkpointed by the conflict-safe native path.</p>"; } catch (error) { panel.innerHTML = `<strong role="alert">Save refused.</strong><p>${escapeHtml(error.message || error)}</p>`; } };
+  panel.append(download, approve); viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel);
 }
 
 async function wireCanvas() {

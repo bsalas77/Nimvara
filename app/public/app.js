@@ -67,6 +67,7 @@ async function api(url, options = {}) {
       if (method === "GET" && parsed.pathname === "/api/workspace-dashboard") return window.__TAURI__.core.invoke("native_workspace_dashboard");
       if (method === "GET" && parsed.pathname === "/api/compatibility-report") return window.__TAURI__.core.invoke("native_compatibility_report");
       if (method === "GET" && parsed.pathname === "/api/canvas") return window.__TAURI__.core.invoke("native_read_canvas", { path: parsed.searchParams.get("path") });
+      if (method === "POST" && parsed.pathname === "/api/canvas/save") return window.__TAURI__.core.invoke("native_save_canvas", { path: input.path, canvas: input.canvas, expectedHash: input.expectedHash ?? null });
       if (method === "GET" && parsed.pathname === "/api/workspace-state") return window.__TAURI__.core.invoke("native_workspace_state", { path: parsed.searchParams.get("path") });
       if (method === "POST" && parsed.pathname === "/api/file/save-copy") return window.__TAURI__.core.invoke("native_save_conflict_copy", { path: input.path, content: input.content });
       if (method === "POST" && parsed.pathname === "/api/attachment/reveal") return window.__TAURI__.core.invoke("native_reveal_file", { path: input.path });
@@ -94,6 +95,7 @@ async function api(url, options = {}) {
   }
   throw Object.assign(new Error("Nimvara native commands are unavailable. Run the desktop application."), { code: "NATIVE_RUNTIME_REQUIRED" });
 }
+window.nimvaraApi = api;
 function status(message) { $("footerStatus").textContent = message; $("welcomeStatus").textContent = message; }
 function error(reason) {
   status(`${reason.code || "ERROR"}: ${reason.message}`);

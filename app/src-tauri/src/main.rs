@@ -536,6 +536,21 @@ fn native_read_canvas(
 }
 
 #[tauri::command]
+fn native_save_canvas(
+    path: String,
+    canvas: serde_json::Value,
+    expected_hash: Option<String>,
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::CanvasSaveResult, String> {
+    native_core::save_canvas(
+        &active_root(&state)?,
+        &path,
+        &canvas,
+        expected_hash.as_deref(),
+    )
+}
+
+#[tauri::command]
 fn native_write_recovery(
     path: String,
     content: String,
@@ -770,6 +785,7 @@ fn main() {
             native_workspace_dashboard,
             native_compatibility_report,
             native_read_canvas,
+            native_save_canvas,
             native_write_recovery,
             native_read_recovery,
             native_clear_recovery,

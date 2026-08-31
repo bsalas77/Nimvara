@@ -87,6 +87,14 @@ pub struct SaveResult {
     pub checkpoint_id: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CanvasSaveResult {
+    pub path: String,
+    pub hash: String,
+    pub unchanged: bool,
+}
+
 #[derive(Serialize)]
 pub struct SearchResult {
     pub path: String,
@@ -403,7 +411,69 @@ pub fn read_canvas(root: &Path, relative: &str) -> Result<serde_json::Value, Str
     if nodes.len() > 5_000 || edges.len() > 10_000 {
         return Err("CANVAS_LIMIT: Canvas exceeds the node or edge safety limit.".into());
     }
-    Ok(serde_json::json!({ "path": normalized, "nodes": nodes, "edges": edges }))
+    Ok(
+        serde_json::json!({ "path": normalized, "hash": hash(&bytes), "nodes": nodes, "edges": edges }),
+    )
+}
+
+pub fn save_canvas(
+    root: &Path,
+    relative: &str,
+    canvas: &serde_json::Value,
+    expected_hash: Option<&str>,
+) -> Result<CanvasSaveResult, String> {
+    const MAX_CANVAS_BYTES: usize = 10 * 1024 * 1024;
+    let normalized = relative.replace('\\', "/");
+    let inventory = workspace_files(root)?;
+    let file = inventory
+        .iter()
+        .find(|file| file.path == normalized && file.extension == ".canvas")
+        .ok_or_else(|| {
+            "CANVAS_NOT_FOUND: Select a .canvas file inside the workspace.".to_string()
+        })?;
+    let target = root.join(normalized.split('/').collect::<PathBuf>());
+    let current = fs::read(&target).map_err(|error| format!("CANVAS_READ: {error}"))?;
+    let current_hash = hash(&current);
+    if expected_hash != Some(current_hash.as_str()) {
+        return Err(format!(
+            "EXTERNAL_CHANGE: expected={} current={}",
+            expected_hash.unwrap_or("null"),
+            current_hash
+        ));
+    }
+    let nodes = canvas
+        .get("nodes")
+        .and_then(|item| item.as_array())
+        .ok_or_else(|| "CANVAS_SCHEMA: Canvas nodes array is missing.".to_string())?;
+    let edges = canvas
+        .get("edges")
+        .and_then(|item| item.as_array())
+        .ok_or_else(|| "CANVAS_SCHEMA: Canvas edges array is missing.".to_string())?;
+    if nodes.len() > 5_000 || edges.len() > 10_000 {
+        return Err("CANVAS_LIMIT: Canvas exceeds the node or edge safety limit.".into());
+    }
+    let next =
+        serde_json::to_vec_pretty(canvas).map_err(|error| format!("CANVAS_JSON: {error}"))?;
+    if next.len() > MAX_CANVAS_BYTES {
+        return Err("CANVAS_LIMIT: Canvas exceeds 10 MiB.".into());
+    }
+    if current == next {
+        return Ok(CanvasSaveResult {
+            path: file.path.clone(),
+            hash: current_hash,
+            unchanged: true,
+        });
+    }
+    write_bytes_atomic(&target, &next)?;
+    let verified = fs::read(&target).map_err(|error| format!("VERIFY_CANVAS: {error}"))?;
+    if verified != next {
+        return Err("VERIFY_FAILED: Saved canvas bytes did not verify.".into());
+    }
+    Ok(CanvasSaveResult {
+        path: file.path.clone(),
+        hash: hash(&verified),
+        unchanged: false,
+    })
 }
 
 pub fn workspace_dashboard(root: &Path) -> Result<WorkspaceDashboard, String> {
