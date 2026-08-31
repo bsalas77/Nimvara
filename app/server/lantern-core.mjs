@@ -479,7 +479,15 @@ export async function planAttachmentRepair(root, source, line, target, candidate
   const beforeLine = lines[index];
   const updatedLine = beforeLine.replace(String(target), normalized);
   lines[index] = updatedLine;
-  return { source: note, line: Number(line), before: beforeLine, after: updatedLine, content: lines.join("\n"), candidate: candidatePath };
+  return { source: note, line: Number(line), before: beforeLine, after: updatedLine, content: lines.join("\n"), candidate: candidatePath, expectedHash: sha256(Buffer.from(current, "utf8")) };
+}
+
+export async function applyAttachmentRepair(root, proposal) {
+  if (!proposal || typeof proposal !== "object") throw new NimvaraError("ATTACHMENT_REPAIR", "A repair proposal is required.");
+  const planned = await planAttachmentRepair(root, proposal.source, proposal.line, proposal.target || proposal.before, proposal.candidate);
+  if (proposal.expectedHash && proposal.expectedHash !== planned.expectedHash) throw new NimvaraError("EXTERNAL_CHANGE", "The note changed since diagnostics; refresh the repair proposal.");
+  if (proposal.content !== planned.content) throw new NimvaraError("ATTACHMENT_REPAIR", "The repair proposal content no longer matches the source.");
+  return saveMarkdown(root, planned.source, planned.content, planned.expectedHash);
 }
 
 export async function noteContext(root, relative) {

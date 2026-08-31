@@ -31,6 +31,7 @@ import {
   restoreSnapshot,
   saveConflictCopy,
   saveMarkdown,
+  applyAttachmentRepair,
   safetyState,
   searchMarkdown,
   workspaceState
@@ -186,6 +187,7 @@ export const server = createServer(async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/link-diagnostics") return send(response, 200, await buildLinkIndex(requireWorkspace()));
     if (request.method === "GET" && url.pathname === "/api/attachment-diagnostics") return send(response, 200, await attachmentDiagnostics(requireWorkspace()));
     if (request.method === "POST" && url.pathname === "/api/attachment-diagnostics/repair-preview") { const input = await body(request); return send(response, 200, await planAttachmentRepair(requireWorkspace(), input.source, input.line, input.target, input.candidate)); }
+    if (request.method === "POST" && url.pathname === "/api/attachment-diagnostics/repair-apply") { const input = await body(request); return send(response, 200, await applyAttachmentRepair(requireWorkspace(), input)); }
     if (request.method === "GET" && url.pathname === "/api/file") return send(response, 200, await readMarkdown(requireWorkspace(), url.searchParams.get("path")));
     if (request.method === "POST" && url.pathname === "/api/file/rename-plan") { const input = await body(request); return send(response, 200, await planRename(requireWorkspace(), input.from, input.to)); }
     if (request.method === "POST" && url.pathname === "/api/file/rename") { const input = await body(request); return send(response, 200, await applyRename(requireWorkspace(), input.from, input.to)); }
