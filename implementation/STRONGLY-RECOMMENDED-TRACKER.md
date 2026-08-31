@@ -3,7 +3,7 @@
 | # | Area | Current state | Next concrete work |
 |---|---|---|---|
 | 1 | Migration assistant | Compatibility scan, link diagnostics, JSON export, reversible copy/verify API, progress journal, status endpoint, cancel/rollback, and first-run progress/cancel/retry UI | Real-vault usability sessions and automatic resume design |
-| 2 | Attachments | Inventory, safe preservation, import preview, native ingestion preservation, drop-path hint, reveal action, bounded native inline previews | Native byte upload/drop adapter and missing-attachment repair workflow |
+| 2 | Attachments | Inventory, safe preservation, import preview, native ingestion preservation, drop-path hint, reveal action, bounded native inline previews, and reviewed repair application with expected-hash conflict refusal | Native byte upload/drop adapter and richer repair candidate ranking |
 | 3 | Kanban | Markdown task board, persistent filters, saved views, durable workspace-scoped boards, safe custom statuses, and drag-to-review proposals | Render durable board columns directly in the task board and add richer card metadata |
 | 4 | Canvas/mind map | Generated mind map, reviewed branch proposals, mouse/keyboard movement, and approved Canvas edits through a conflict-safe native save path with hash refusal, schema/size limits, and post-write verification | Add checkpoint/history UI for Canvas edits and richer edge/node editing |
 | 5 | Property/database views | Frontmatter cards/table, persistent saved views, deterministic sort/group, and conservative boolean/finite-number typed values | Richer typed values and database editing workflows |
