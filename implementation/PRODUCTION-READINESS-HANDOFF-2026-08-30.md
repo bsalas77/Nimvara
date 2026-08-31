@@ -13,7 +13,7 @@ platform environment.
 | 4 | Encrypted backup/restore | Authenticated encrypted snapshot, tamper/wrong-key/Unicode restore, rotation, and rollback tests pass. | OS credential-store integration, unattended encrypted scheduling, periodic real restore drills. |
 | 5 | Large-vault performance | 10,000-note, long-note/attachment, and read-only representative-vault measurements recorded. | Clean-install startup and minimum-hardware measurements. |
 | 6 | Two-device sync | Provider-neutral reconciliation harness covers conflicts, offline, placeholders, rename, and interruption. | Live two-device OneDrive matrix. |
-| 7 | Windows release | Installer/MSIX rebuilt; manifest, SBOM, installer retention tests, and exact hashes verified. | Clean Windows 10/11 install, upgrade, rollback, UI smoke, and uninstall retention. |
+| 7 | Windows release | Installer/MSIX rebuilt; manifest, SBOM, installer retention tests, and exact hashes verified. The current EXE was installed over the prior 0.7.0 copy on this host and the new desktop binary is present. | Clean Windows 10/11 install, non-admin upgrade behavior, rollback, UI smoke, and uninstall retention. |
 | 8 | Linux/macOS packaging | Debian artifact and historical Linux-container logic evidence exist. | Reachable Linux desktop and macOS runner, native package/runtime tests, Apple signing access. |
 | 9 | Human accessibility | Automated semantics, keyboard landmarks, contrast, CSP, and reduced-motion checks pass. | Narrator/NVDA, zoom, high-contrast, switch-control, and human keyboard sessions. |
 | 10 | Independent security | SSRF, untrusted-content, traversal, extension, AI prompt-injection, and dependency checks pass. | Independent security assessment and remediation record. |
