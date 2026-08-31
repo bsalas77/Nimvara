@@ -28,6 +28,41 @@ function showEdgeProposal(viewer, canvas, from, to) {
   panel.append(approve); viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel);
 }
 
+async function showCanvasHistory(viewer, canvas) {
+  const panel = document.createElement("section");
+  panel.className = "preview canvas-history";
+  panel.setAttribute("aria-label", "Canvas history");
+  panel.innerHTML = "<strong>Canvas history</strong><p>Checkpoints are local and can be restored only after review.</p><span>Loading…</span>";
+  viewer.querySelector(".canvas-history")?.remove();
+  viewer.append(panel);
+  try {
+    const records = await window.nimvaraApi(`/api/history?path=${encodeURIComponent(canvas.path)}`);
+    const list = document.createElement("div");
+    if (!records.length) list.textContent = "No Canvas checkpoints yet.";
+    for (const record of records) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary";
+      button.textContent = `${new Date(record.createdAt).toLocaleString()} — ${record.reason}`;
+      button.onclick = async () => {
+        if (!confirm("Restore this Canvas checkpoint? The current Canvas will be checkpointed first.")) return;
+        button.disabled = true;
+        try {
+          await window.nimvaraApi("/api/history/restore", { method: "POST", body: JSON.stringify({ checkpointId: record.id, expectedHash: canvas.hash }) });
+          panel.innerHTML = "<strong>Canvas checkpoint restored and verified.</strong><p>Reopen the Canvas to review the restored layout.</p>";
+        } catch (error) {
+          button.disabled = false;
+          panel.innerHTML = `<strong role="alert">Restore refused.</strong><p>${escapeHtml(error.message || error)}</p>`;
+        }
+      };
+      list.append(button);
+    }
+    panel.querySelector("span")?.replaceWith(list);
+  } catch (error) {
+    panel.innerHTML = `<strong role="alert">History unavailable.</strong><p>${escapeHtml(error.message || error)}</p>`;
+  }
+}
+
 async function wireCanvas() {
   const viewer = id("canvasViewer"), svg = viewer?.querySelector("svg"), path = id("canvasPath")?.value.trim();
   if (!viewer || !svg || !path || viewer.dataset.canvasWired === path) return;
@@ -35,6 +70,7 @@ async function wireCanvas() {
   let canvas;
   try { const response = await fetch(`/api/canvas?path=${encodeURIComponent(path)}`); if (!response.ok) return; canvas = await response.json(); } catch { return; }
   const connect = document.createElement("button"); connect.type = "button"; connect.className = "secondary"; connect.textContent = "Connect nodes"; connect.setAttribute("aria-pressed", "false"); id("openCanvas")?.after(connect); let connectMode = false, firstNode = null; connect.onclick = () => { connectMode = !connectMode; firstNode = null; connect.setAttribute("aria-pressed", String(connectMode)); connect.textContent = connectMode ? "Cancel connect" : "Connect nodes"; };
+  const history = document.createElement("button"); history.type = "button"; history.className = "secondary"; history.textContent = "Canvas history"; connect.after(history); history.onclick = () => showCanvasHistory(viewer, canvas);
   [...svg.querySelectorAll("g")].forEach((group, index) => {
     const node = canvas.nodes[index]; if (!node) return;
     group.setAttribute("tabindex", "0"); group.setAttribute("role", "button"); group.setAttribute("aria-label", `Move canvas node ${String(node.text || node.file || node.type || "Node").slice(0, 60)}`);

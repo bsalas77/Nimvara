@@ -1,4 +1,6 @@
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import assert from "node:assert/strict";
 import { layoutMindMap, parseMindMap, proposeCanvasEdge, proposeCanvasNodeMove } from "../public/mindmap.js";
 
@@ -33,6 +35,13 @@ test("canvas edge proposals validate nodes and remain review-only", () => {
   assert.match(proposal.content, /nimvara-edge-a-b/);
   assert.throws(() => proposeCanvasEdge(source, "a", "a"), /cannot connect/);
   assert.throws(() => proposeCanvasEdge(JSON.stringify({ nodes: [{ id: "a" }], edges: [] }), "a", "b"), /Both Canvas nodes/);
+});
+
+test("Canvas UI exposes review-first checkpoint restore", () => {
+  const source = readFileSync(path.join(process.cwd(), "app", "public", "canvas-ui.js"), "utf8");
+  assert.match(source, /Canvas history/);
+  assert.match(source, /Restore this Canvas checkpoint/);
+  assert.match(source, /expectedHash: canvas\.hash/);
 });
 
 test("canvas moves produce reviewable JSON proposals without mutating source", () => {
