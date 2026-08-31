@@ -14,8 +14,13 @@
         "title": "Nimvara",
         "width": 1440,
         "height": 920,
+        "x": 80,
+        "y": 60,
         "minWidth": 980,
         "minHeight": 650,
+        "center": true,
+        "visible": true,
+        "focus": true,
         "resizable": true,
         "fullscreen": false
       }
