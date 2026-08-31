@@ -12,3 +12,5 @@ Fresh local release audit recorded these artifacts:
 The current release checker reports **27/37** checks passing. Authenticode status for the Windows installer is `NotSigned`, as expected for this development artifact. The SBOM is regenerated from locked Cargo/npm manifests; signed provenance and independent review remain open.
 
 The optimized native test profile was rerun on 2026-08-31: 26 tests passed and 2 benchmark tests were intentionally ignored. The resulting `app/src-tauri/target/release/nimvara.exe` was used to rebuild the Windows installer and MSIX above.
+
+The committed verifier `node tools/verify-release-artifacts.mjs` was rerun after the rebuild and returned `verified: true` for all four listed artifacts.
