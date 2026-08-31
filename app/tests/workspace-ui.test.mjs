@@ -30,6 +30,19 @@ test("diagnostics redaction excludes note contents and full local paths", () => 
   assert.equal(Object.hasOwn(result, "workspace"), false);
 });
 
+test("diagnostics compatibility summary drops path-bearing fields", () => {
+  const result = sanitizeDiagnostics({ lastCompatibilityReport: {
+    markdownNotes: 4,
+    missingAttachments: 2,
+    missingAttachmentPaths: ["Private/Secret.md:4 -> hidden.png"],
+    longestRelativePath: "Private/Secret.md",
+    extensions: { ".md": 4, "/absolute/private": 1 }
+  } });
+  assert.deepEqual(result.compatibility, { markdownNotes: 4, missingAttachments: 2, extensions: { ".md": 4 } });
+  assert.ok(!JSON.stringify(result).includes("Secret"));
+  assert.ok(!JSON.stringify(result).includes("hidden.png"));
+});
+
 test("rich preview renders tables tasks footnotes and math without execution", () => {
   const rendered = renderMarkdownPreview("| A | B |\n| --- | --- |\n| 1 | 2 |\n\n- [ ] Task\n\n$E=mc^2$[^n]\n\n[^n]: Note");
   assert.match(rendered, /<table>/);

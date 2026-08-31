@@ -83,6 +83,10 @@ export function normalizeSettings(input = {}) {
 export function sanitizeDiagnostics(input = {}) {
   const value = input && typeof input === "object" ? input : {};
   const redactPath = (candidate) => String(candidate ?? "").replaceAll("\\", "/").split("/").at(-1) || null;
+  const sourceCompatibility = value.lastCompatibilityReport && typeof value.lastCompatibilityReport === "object" ? value.lastCompatibilityReport : null;
+  const compatibility = sourceCompatibility ? Object.fromEntries(Object.entries(sourceCompatibility)
+    .filter(([key, item]) => key !== "missingAttachmentPaths" && key !== "longestRelativePath" && (typeof item === "number" || (key === "extensions" && item && typeof item === "object")))
+    .map(([key, item]) => [key, key === "extensions" ? Object.fromEntries(Object.entries(item).filter(([extension, count]) => /^[.a-z0-9_-]{0,16}$/i.test(extension) && Number.isSafeInteger(count) && count >= 0).slice(0, 64)) : Number.isFinite(item) ? Math.max(0, Math.min(1_000_000_000, item)) : 0])) : null;
   return {
     schema: 1,
     generatedAt: value.generatedAt ?? new Date().toISOString(),
@@ -92,6 +96,6 @@ export function sanitizeDiagnostics(input = {}) {
     openTabs: Array.isArray(value.openTabs) ? value.openTabs.map(redactPath).filter(Boolean) : [],
     noteName: redactPath(value.notePath),
     dirty: Boolean(value.dirty),
-    compatibility: value.lastCompatibilityReport ?? null
+    compatibility
   };
 }
