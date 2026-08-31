@@ -17,3 +17,5 @@ The same harness was rerun against `dist/Nimvara-Setup-0.7.0-dev.exe` and the re
 ## Fresh artifact rerun — 2026-08-31
 
 The harness was run against the freshly rebuilt packaged executable at `dist/windows-installer/payload/Nimvara.exe`. It again ended with `WebView2 debugging target did not become available` after the bounded wait. The read-only source vault was not modified. The setup package and MSIX build checks pass; functional clean-install UI assertions remain unqualified until a supported WebView2 test hook or clean test account is available.
+
+The host was also checked for `tauri-driver` and `msedgedriver`; neither executable is installed. No alternate local WebView2 automation result is therefore available.
