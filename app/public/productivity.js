@@ -34,6 +34,12 @@ export function parseFrontmatter(content) {
 
 export function parseScalar(value) {
   const text = String(value).trim();
+  if (text.startsWith("[") && text.endsWith("]")) {
+    const inner = text.slice(1, -1).trim();
+    if (!inner) return [];
+    const items = inner.split(",").map((item) => item.trim().replace(/^['"]|['"]$/g, ""));
+    if (items.length <= 50 && items.every((item) => item.length <= 200 && !/[{}[\]]/.test(item))) return items.map((item) => parseScalar(item));
+  }
   if (/^(true|false)$/i.test(text)) return text.toLowerCase() === "true";
   if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)) {
     const number = Number(text);

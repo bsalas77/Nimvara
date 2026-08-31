@@ -9,6 +9,8 @@ test("frontmatter conservatively parses booleans and finite numbers", () => {
   assert.equal(properties.ratio, 1.5);
   assert.equal(properties.when, "2026-08-30");
   assert.equal(parseScalar("001"), "001");
+  assert.deepEqual(parseScalar("[work, urgent, 3]"), ["work", "urgent", 3]);
+  assert.deepEqual(parseScalar("[]"), []);
 });
 
 test("typed property values filter and sort predictably", () => {
