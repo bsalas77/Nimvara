@@ -1,10 +1,10 @@
 # Nimvara daily-driver vertical slice
 
 Status: installable Windows-host development slice  
-Last engineering validation: 2026-08-29
+Last engineering validation: 2026-08-31
 
-Release-readiness was regenerated on 2026-08-29. The current development distribution
-set remains intentionally pre-production: 12 of 22 automated/owner gates pass; the
+Release-readiness was regenerated on 2026-08-31. The current development distribution
+set remains intentionally pre-production: 29 of 39 automated/owner gates pass; the
 remaining gates are documented in `dist/release-readiness.json` and are not being
 papered over by synthetic evidence.
 
