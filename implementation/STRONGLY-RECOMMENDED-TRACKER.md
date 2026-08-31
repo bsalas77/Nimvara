@@ -11,6 +11,6 @@
 | 7 | Publishing | Native safe selected/all-note HTML export, internal link rewriting, referenced attachment copying, ZIP packaging utility, and no-write preflight preview | Signed/polished release publishing workflow and broader Markdown rendering parity |
 | 8 | Backup | Verified snapshots/restore, bounded scheduler, retention confirmation, authenticated encrypted snapshots, user-initiated encrypt-now route, and in-memory encrypted snapshot password rotation | Native key-store integration, unattended encrypted scheduling, provider adapters, and periodic restore drills |
 | 9 | Diagnostics | Privacy-safe aggregate `/api/diagnostics` report without note contents, filenames, or full paths; UI redaction helper and automated redaction tests | Attach validation logs and consented support-report workflow |
-| 10 | Evidence | 72 JS tests, 23 Rust tests, reproducible performance/sync qualification, dependency audit, and Windows/Linux artifact evidence | Linux desktop launch, macOS build, human sessions, accessibility, independent review, live two-device sync, and representative-vault evidence |
+| 10 | Evidence | 83 JS tests, 24 Rust tests, reproducible performance/sync qualification, dependency audit, and Windows/Linux artifact evidence | Linux desktop launch, macOS build, human sessions, accessibility, independent review, live two-device sync, and representative-vault evidence |
 
 Items marked as current state are implemented and validated to the extent stated. The next-work column is intentionally not marked complete until code and evidence exist.
