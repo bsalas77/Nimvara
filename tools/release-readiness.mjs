@@ -24,7 +24,7 @@ check("RELEASE_ARTIFACT_INTEGRITY", existsSync(resolve(root, "implementation/REL
 check("WINDOWS_INSTALLER", existsSync(resolve(root, "dist/Nimvara-Setup-0.7.0-dev.exe")), "Windows development installer artifact exists; current-build clean-install UI smoke evidence remains required (the installed copy was not replaced during the last local attempt).");
 check("WINDOWS_MSIX", existsSync(resolve(root, "dist/Nimvara-0.7.0-dev.msix")), "Development MSIX exists with placeholder identity and no trusted signature.", true);
 check("LINUX_DEB", existsSync(resolve(root, "dist/Nimvara_0.7.0_amd64.deb")), "Current Debian package uses the reviewed glib security backport and passed Linux formatting, tests, strict linting, package inspection, and dynamic-link resolution; installed GUI testing remains.");
-check("LINUX_CONTAINER_LOGIC", existsSync(resolve(root, "implementation/LINUX-CONTAINER-VALIDATION-2026-08-30.md")), "Current 68-test JavaScript suite passed in a read-only node:24-bookworm container; native Linux GUI and package installation remain separate gates.");
+check("LINUX_CONTAINER_LOGIC", existsSync(resolve(root, "implementation/LINUX-CONTAINER-VALIDATION-2026-08-30.md")), "Current 87-test JavaScript suite passed in a read-only node:24-bookworm container; native Linux GUI and package installation remain separate gates.");
 check("MACOS_ARTIFACT", false, "Requires a macOS runner, Apple Developer membership, Developer ID, notarization, and host testing.", true);
 check("INDEPENDENT_SECURITY_REVIEW", false, "Requires an independent reviewer and remediation cycle.", true);
 check("HUMAN_ACCESSIBILITY_REVIEW", false, "Requires consented Narrator/NVDA and platform assistive-technology sessions.", true);
