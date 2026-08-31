@@ -30,3 +30,7 @@ current Windows desktop session, so this is now isolated to window-state restora
 or WebView2/Tauri initialization rather than installer payload extraction. Do not
 mark the packaged UI gate complete until a clean profile or manual desktop check
 confirms the window opens at the configured size.
+
+Direct Win32 enumeration found two visible Nimvara-owned top-level windows, both
+blank-titled and approximately 50×50 at the same off-screen edge. This indicates a
+native window lifecycle/state problem rather than a missing WebView2 runtime.
