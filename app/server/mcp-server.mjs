@@ -26,8 +26,8 @@ async function call(id, method, params = {}) {
     { name: "nimvara_list_notes", description: "List Markdown notes in the selected workspace.", inputSchema: { type: "object", properties: {} } },
     { name: "nimvara_read_note", description: "Read one Markdown note by relative path.", inputSchema: { type: "object", required: ["path"], properties: { path: { type: "string" } } } },
     { name: "nimvara_search", description: "Search note content and paths using Nimvara's local index boundary.", inputSchema: { type: "object", required: ["query"], properties: { query: { type: "string" } } } },
-    { name: "nimvara_note_context", description: "Return headings, links, backlinks, and diagnostics for a note.", inputSchema: { type: "object", required: ["path"], properties: { path: { type: "string" } } } }
-    ,{ name: "nimvara_diagnostics", description: "Return aggregate privacy-safe workspace diagnostics without note contents or identifying paths.", inputSchema: { type: "object", properties: {} } }
+    { name: "nimvara_note_context", description: "Return headings, links, backlinks, and diagnostics for a note.", inputSchema: { type: "object", required: ["path"], properties: { path: { type: "string" } } } },
+    { name: "nimvara_diagnostics", description: "Return aggregate privacy-safe workspace diagnostics without note contents or identifying paths.", inputSchema: { type: "object", properties: {} } }
   ] });
   if (method !== "tools/call") return error(id, -32601, `Unsupported method: ${method}`);
   if (!workspace) return error(id, -32001, "Set NIMVARA_WORKSPACE to an existing workspace before using tools.");
