@@ -76,3 +76,25 @@ export async function restoreEncryptedSnapshot(encryptedPath, destination, passw
   } catch (error) { await rm(staging, { recursive: true, force: true }); throw new NimvaraError("ENCRYPTED_RESTORE", error.message); }
   return { destination: target, files: decoded.files.length, verified: true };
 }
+
+export async function rotateEncryptedSnapshot(encryptedPath, outputPath, oldPassword, newPassword) {
+  const envelope = JSON.parse(await readFile(path.resolve(encryptedPath), "utf8"));
+  if (envelope.format !== FORMAT || typeof envelope.snapshotId !== "string") throw new NimvaraError("ENCRYPTED_FORMAT", "Unsupported encrypted snapshot format.");
+  const aad = Buffer.from(`${FORMAT}\0${envelope.snapshotId}`, "utf8");
+  let payload;
+  try {
+    const decipher = createDecipheriv("aes-256-gcm", scryptSync(passwordBytes(oldPassword), Buffer.from(envelope.salt, "base64"), 32), Buffer.from(envelope.iv, "base64"));
+    decipher.setAAD(aad); decipher.setAuthTag(Buffer.from(envelope.tag, "base64"));
+    payload = Buffer.concat([decipher.update(Buffer.from(envelope.ciphertext, "base64")), decipher.final()]);
+  } catch { throw new NimvaraError("ENCRYPTED_AUTH", "Old password or encrypted snapshot authentication failed."); }
+  if (payload.length > MAX_PAYLOAD_BYTES) throw new NimvaraError("ENCRYPTED_PAYLOAD_TOO_LARGE", "Encrypted snapshot payload exceeds the 512 MiB safety limit.");
+  const salt = randomBytes(16), iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", scryptSync(passwordBytes(newPassword), salt, 32), iv);
+  cipher.setAAD(aad);
+  const ciphertext = Buffer.concat([cipher.update(payload), cipher.final()]);
+  const rotated = { ...envelope, salt: salt.toString("base64"), iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"), ciphertext: ciphertext.toString("base64") };
+  const target = path.resolve(outputPath), temporary = `${target}.partial-${randomBytes(6).toString("hex")}`;
+  await mkdir(path.dirname(target), { recursive: true });
+  try { await writeFile(temporary, `${JSON.stringify(rotated)}\n`, { flag: "wx" }); await rename(temporary, target); } catch (error) { await rm(temporary, { force: true }); throw new NimvaraError("ENCRYPTED_WRITE", error.message); }
+  return { path: target, snapshotId: envelope.snapshotId, rotated: true, format: FORMAT };
+}

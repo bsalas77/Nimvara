@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createSnapshot } from "../server/lantern-core.mjs";
-import { encryptSnapshot, restoreEncryptedSnapshot, safePayloadPath } from "../server/encrypted-snapshot.mjs";
+import { encryptSnapshot, restoreEncryptedSnapshot, rotateEncryptedSnapshot, safePayloadPath } from "../server/encrypted-snapshot.mjs";
 
 test("encrypted restore path policy rejects traversal and absolute aliases", () => {
   for (const value of ["../escape.md", "C:\\escape.md", "/escape.md", "folder/../escape.md", "folder//file.md"]) {
@@ -28,6 +28,10 @@ test("encrypted snapshot authenticates, restores losslessly, and preserves sourc
   await restoreEncryptedSnapshot(output, restored, "correct horse battery staple");
   assert.deepEqual(await readFile(path.join(restored, "Résumé 日本語.md")), before);
   assert.deepEqual(await readFile(path.join(root, "Résumé 日本語.md")), before);
+  const rotated = path.join(backups, "rotated.nvenc");
+  await rotateEncryptedSnapshot(output, rotated, "correct horse battery staple", "new password with rotation");
+  await restoreEncryptedSnapshot(rotated, path.join(backups, "rotated-restore"), "new password with rotation");
+  await assert.rejects(restoreEncryptedSnapshot(rotated, path.join(backups, "bad-rotation"), "correct horse battery staple"), (error) => error.code === "ENCRYPTED_AUTH");
   const tampered = JSON.parse(await readFile(output, "utf8")); tampered.ciphertext = `${tampered.ciphertext.slice(0, -2)}AA`;
   await writeFile(output, `${JSON.stringify(tampered)}\n`);
   await assert.rejects(restoreEncryptedSnapshot(output, path.join(backups, "tampered"), "correct horse battery staple"), (error) => error.code === "ENCRYPTED_AUTH");

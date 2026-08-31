@@ -47,7 +47,7 @@ import { validateExtensionManifest, verifyExtensionSignature } from "./extension
 import { listExtensions, registerExtension, setExtensionEnabled, trustExtensionKey, listTrustedExtensionKeys } from "./extension-registry.mjs";
 import { getMobileCapabilities } from "./mobile-capabilities.mjs";
 import { listKanbanBoards, saveKanbanBoard } from "./kanban-boards.mjs";
-import { encryptSnapshot, restoreEncryptedSnapshot } from "./encrypted-snapshot.mjs";
+import { encryptSnapshot, restoreEncryptedSnapshot, rotateEncryptedSnapshot } from "./encrypted-snapshot.mjs";
 
 let workspace = null;
 let workspaceWatcher = null;
@@ -240,6 +240,7 @@ export const server = createServer(async (request, response) => {
       return send(response, 200, { snapshot, encrypted });
     }
     if (request.method === "POST" && url.pathname === "/api/snapshots/encrypted-restore") { const input = await body(request); return send(response, 200, await restoreEncryptedSnapshot(input.encryptedPath, input.destination, input.password)); }
+    if (request.method === "POST" && url.pathname === "/api/snapshots/rotate-encryption") { const input = await body(request); return send(response, 200, await rotateEncryptedSnapshot(input.encryptedPath, input.outputPath, input.oldPassword, input.newPassword)); }
     if (request.method === "POST" && url.pathname === "/api/snapshots/restore") {
       const input = await body(request);
       return send(response, 200, await restoreSnapshot(input.snapshotPath, input.destination));
