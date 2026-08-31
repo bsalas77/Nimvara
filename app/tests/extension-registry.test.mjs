@@ -58,5 +58,11 @@ test("signed extension package verification is bounded and never extracts files"
     assert.equal((await readFile(path.join(installed.installPath, "dist", "main.js"), "utf8")), "safe extension payload");
     await assert.rejects(installVerifiedExtensionPackage(packagePath, path.join(folder, "extensions"), [trusted]), /already installed/);
     await assert.rejects(verifyExtensionPackage(packagePath, []), /missing or untrusted/);
+    await writeFile(packagePath, JSON.stringify({ manifest: { ...manifest, signature }, files: [{ path: "../escape.js", bytes: content.length, sha256: sha256(content), data: content.toString("base64") }] }));
+    await assert.rejects(verifyExtensionPackage(packagePath, [trusted]), /unsafe path/);
+    await writeFile(packagePath, JSON.stringify({ manifest: { ...manifest, signature }, files: [{ path: "dist/main.js", bytes: content.length, sha256: "0".repeat(64), data: content.toString("base64") }] }));
+    await assert.rejects(verifyExtensionPackage(packagePath, [trusted]), /verification failed/);
+    await writeFile(packagePath, JSON.stringify({ manifest: { ...manifest, signature }, files: [{ path: "dist/main.js", bytes: content.length, sha256: sha256(content), data: content.toString("base64") }, { path: "DIST/Main.js", bytes: content.length, sha256: sha256(content), data: content.toString("base64") }] }));
+    await assert.rejects(verifyExtensionPackage(packagePath, [trusted]), /duplicate paths/);
   } finally { await rm(folder, { recursive: true, force: true }); }
 });
