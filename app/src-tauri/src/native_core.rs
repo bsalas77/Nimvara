@@ -93,6 +93,7 @@ pub struct CanvasSaveResult {
     pub path: String,
     pub hash: String,
     pub unchanged: bool,
+    pub checkpoint_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -462,8 +463,10 @@ pub fn save_canvas(
             path: file.path.clone(),
             hash: current_hash,
             unchanged: true,
+            checkpoint_id: None,
         });
     }
+    let checkpoint_id = Some(checkpoint(root, &normalized, &current)?);
     write_bytes_atomic(&target, &next)?;
     let verified = fs::read(&target).map_err(|error| format!("VERIFY_CANVAS: {error}"))?;
     if verified != next {
@@ -473,6 +476,7 @@ pub fn save_canvas(
         path: file.path.clone(),
         hash: hash(&verified),
         unchanged: false,
+        checkpoint_id,
     })
 }
 
@@ -835,6 +839,30 @@ fn clean_relative(value: &str) -> Result<String, String> {
     validate_portable_components(&normalized)?;
     if !normalized.to_ascii_lowercase().ends_with(".md") {
         return Err("NOT_MARKDOWN: Nimvara edits Markdown files only.".into());
+    }
+    Ok(normalized)
+}
+
+fn clean_canvas_relative(value: &str) -> Result<String, String> {
+    let normalized = value.replace('\\', "/").trim_start_matches('/').to_string();
+    let path = Path::new(&normalized);
+    if normalized.trim().is_empty()
+        || path
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_)))
+    {
+        return Err("PATH_ESCAPE: The path must stay inside the workspace.".into());
+    }
+    if normalized
+        .split('/')
+        .next()
+        .is_some_and(|part| part.eq_ignore_ascii_case(META))
+    {
+        return Err("RESERVED_PATH: Nimvara metadata is not editable as a note.".into());
+    }
+    validate_portable_components(&normalized)?;
+    if !normalized.to_ascii_lowercase().ends_with(".canvas") {
+        return Err("NOT_CANVAS: History path is not a Canvas file.".into());
     }
     Ok(normalized)
 }
@@ -1230,7 +1258,11 @@ fn checkpoint(root: &Path, relative: &str, bytes: &[u8]) -> Result<String, Strin
 }
 
 pub fn list_history(root: &Path, relative: &str) -> Result<Vec<Checkpoint>, String> {
-    let safe = clean_relative(relative)?;
+    let safe = if relative.to_ascii_lowercase().ends_with(".canvas") {
+        clean_canvas_relative(relative)?
+    } else {
+        clean_relative(relative)?
+    };
     let history_root = root.join(META).join("history");
     let mut records = Vec::new();
     let entries = match fs::read_dir(history_root) {
@@ -1273,9 +1305,24 @@ pub fn restore_history(
             .map_err(|error| format!("READ_CHECKPOINT: {error}"))?,
     )
     .map_err(|error| format!("INVALID_CHECKPOINT: {error}"))?;
-    let safe = clean_relative(&record.path)?;
+    let safe = if record.path.to_ascii_lowercase().ends_with(".canvas") {
+        clean_canvas_relative(&record.path)?
+    } else {
+        clean_relative(&record.path)?
+    };
     let bytes = fs::read(directory.join(safe.split('/').collect::<PathBuf>()))
         .map_err(|error| format!("READ_CHECKPOINT: {error}"))?;
+    if record.path.to_ascii_lowercase().ends_with(".canvas") {
+        let canvas: serde_json::Value = serde_json::from_slice(&bytes)
+            .map_err(|_| "INVALID_CANVAS: Checkpoint is not valid Canvas JSON.".to_string())?;
+        let saved = save_canvas(root, &record.path, &canvas, Some(expected_hash))?;
+        return Ok(SaveResult {
+            path: saved.path,
+            hash: saved.hash,
+            unchanged: saved.unchanged,
+            checkpoint_id: saved.checkpoint_id,
+        });
+    }
     let content = String::from_utf8(bytes)
         .map_err(|_| "INVALID_UTF8: Checkpoint is not valid UTF-8.".to_string())?;
     save_note(root, &record.path, &content, Some(expected_hash))
@@ -2085,6 +2132,8 @@ mod tests {
         next["nodes"][0]["x"] = serde_json::json!(25);
         let saved = save_canvas(&root, "Plan.canvas", &next, opened["hash"].as_str()).unwrap();
         assert!(!saved.unchanged);
+        assert!(saved.checkpoint_id.is_some());
+        assert_eq!(list_history(&root, "Plan.canvas").unwrap().len(), 1);
         assert_eq!(
             read_canvas(&root, "Plan.canvas").unwrap()["nodes"][0]["x"],
             25
@@ -2451,8 +2500,16 @@ mod tests {
         for index in 0..1_000 {
             let folder = root.join(format!("projects/{:02}", index % 25));
             fs::create_dir_all(folder.join("assets")).unwrap();
-            fs::write(folder.join(format!("Long-{index:04}.md")), format!("# Long note {index}\n\n{body}\nneedle-long-form-{index}\n")).unwrap();
-            fs::write(folder.join("assets").join(format!("image-{index:04}.bin")), vec![7u8; 4096]).unwrap();
+            fs::write(
+                folder.join(format!("Long-{index:04}.md")),
+                format!("# Long note {index}\n\n{body}\nneedle-long-form-{index}\n"),
+            )
+            .unwrap();
+            fs::write(
+                folder.join("assets").join(format!("image-{index:04}.bin")),
+                vec![7u8; 4096],
+            )
+            .unwrap();
         }
         let create_ms = start_create.elapsed().as_millis();
         let cache_root = fixture();
