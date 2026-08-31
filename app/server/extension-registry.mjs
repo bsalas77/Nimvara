@@ -1,5 +1,5 @@
 import { NimvaraError } from "./lantern-core.mjs";
-import { createHash } from "node:crypto";
+import { createHash, createPublicKey } from "node:crypto";
 import { validateExtensionManifest, verifyExtensionSignature } from "./extension-manifest.mjs";
 
 const registry = new Map();
@@ -27,7 +27,14 @@ export function setExtensionEnabled(extensionId, enabled) {
 
 export function trustExtensionKey(publicKey) {
   const key = String(publicKey || "").trim();
-  if (!key.includes("PUBLIC KEY")) throw new NimvaraError("EXTENSION_KEY", "A PEM public key is required.");
+  if (key.length > 16_384) throw new NimvaraError("EXTENSION_KEY", "The public key is too large.");
+  if (!key.includes("BEGIN PUBLIC KEY") || key.includes("PRIVATE KEY")) throw new NimvaraError("EXTENSION_KEY", "An Ed25519 PEM public key is required.");
+  try {
+    const parsed = createPublicKey(key);
+    if (parsed.asymmetricKeyType !== "ed25519") throw new Error("wrong key type");
+  } catch {
+    throw new NimvaraError("EXTENSION_KEY", "An Ed25519 PEM public key is required.");
+  }
   trustedKeys.add(key);
   for (const [id, record] of registry) {
     const verification = verifyExtensionSignature(record, [...trustedKeys]);

@@ -41,6 +41,15 @@ test("untrusted signed extensions cannot be enabled", () => {
   assert.throws(() => setExtensionEnabled(id, true), /must verify against a trusted key/);
 });
 
+test("trusted extension keys reject malformed, private, oversized, and non-Ed25519 PEMs", () => {
+  assert.throws(() => trustExtensionKey("-----BEGIN PUBLIC KEY-----\nnot-a-key\n-----END PUBLIC KEY-----"), /Ed25519 PEM public key/);
+  const { privateKey } = generateKeyPairSync("ed25519");
+  assert.throws(() => trustExtensionKey(privateKey.export({ type: "pkcs8", format: "pem" })), /Ed25519 PEM public key/);
+  const { publicKey: rsa } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  assert.throws(() => trustExtensionKey(rsa.export({ type: "spki", format: "pem" })), /Ed25519 PEM public key/);
+  assert.throws(() => trustExtensionKey("-----BEGIN PUBLIC KEY-----\n" + "A".repeat(16_400) + "\n-----END PUBLIC KEY-----"), /too large/);
+});
+
 test("signed extension package verification is bounded and never extracts files", async () => {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
   const manifest = { id: "package.reader", name: "Package Reader", version: "1.0.0", permissions: ["notes:read"] };
