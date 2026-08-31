@@ -13,3 +13,7 @@ Next action: run the smoke harness on a clean Windows test account with WebView2
 ## Latest rerun — 2026-08-31
 
 The same harness was rerun against `dist/Nimvara-Setup-0.7.0-dev.exe` and the read-only Obsidian-vault copy workflow. It again timed out before a WebView2 debugging target appeared. No source-vault files were modified. This confirms the instrumentation gate is repeatable; it does not provide functional UI pass/fail evidence.
+
+## Fresh artifact rerun — 2026-08-31
+
+The harness was run against the freshly rebuilt packaged executable at `dist/windows-installer/payload/Nimvara.exe`. It again ended with `WebView2 debugging target did not become available` after the bounded wait. The read-only source vault was not modified. The setup package and MSIX build checks pass; functional clean-install UI assertions remain unqualified until a supported WebView2 test hook or clean test account is available.
