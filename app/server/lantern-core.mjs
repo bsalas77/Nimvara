@@ -524,6 +524,44 @@ export async function workspaceState(root, relative = null) {
   return { signature, files, note };
 }
 
+/**
+ * Return a privacy-safe support report.  It intentionally contains aggregate
+ * workspace facts only: no note names, paths, contents, hashes, or metadata
+ * from individual files are returned.
+ */
+export async function diagnosticsReport(root, appVersion = "development") {
+  const files = await listWorkspaceFiles(root);
+  const byExtension = {};
+  let markdownCount = 0;
+  let attachmentCount = 0;
+  let totalBytes = 0;
+  let largestFileBytes = 0;
+  let maxPathDepth = 0;
+  for (const file of files) {
+    totalBytes += file.bytes;
+    largestFileBytes = Math.max(largestFileBytes, file.bytes);
+    maxPathDepth = Math.max(maxPathDepth, file.path.split("/").length);
+    byExtension[file.extension || "(none)"] = (byExtension[file.extension || "(none)"] || 0) + 1;
+    if (file.kind === "markdown") markdownCount += 1;
+    else attachmentCount += 1;
+  }
+  return {
+    schema: 1,
+    generatedAt: new Date().toISOString(),
+    appVersion: String(appVersion).slice(0, 32),
+    runtime: { platform: process.platform, arch: process.arch, nodeMajor: Number(process.versions.node.split(".")[0]) },
+    workspace: {
+      fileCount: files.length,
+      markdownCount,
+      attachmentCount,
+      totalBytes,
+      largestFileBytes,
+      maxPathDepth,
+      byExtension
+    }
+  };
+}
+
 // Human-readable trust state for the UI, based only on facts verified locally.
 export async function safetyState(root, relative = null) {
   const state = await workspaceState(root, relative);
