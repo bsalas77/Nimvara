@@ -46,3 +46,8 @@ The Codex restricted shell could not read Windows hardware inventory (`Get-CimIn
 and `systeminfo` returned access denied). No RAM, GPU, VRAM, or throughput claim is made
 for this host. Run the in-app hardware check or a normal-user PowerShell session during
 model qualification, then attach measured results to the matrix above.
+
+Node runtime observation from the same host (non-privileged, 2026-08-31) reported
+approximately **63.72 GiB total / 37.34 GiB free memory**, **24 logical CPUs**, and an
+**Intel Core i7-13700K** on `win32 x64`. This is an availability snapshot, not a model
+benchmark; GPU/VRAM, thermals, token throughput, and sustained memory use remain unknown.
