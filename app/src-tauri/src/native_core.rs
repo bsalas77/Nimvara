@@ -1113,8 +1113,18 @@ pub fn diagnostics_report(root: &Path, app_version: &str) -> Result<serde_json::
         total_bytes = total_bytes.saturating_add(file.bytes);
         largest_file_bytes = largest_file_bytes.max(file.bytes);
         max_path_depth = max_path_depth.max(file.path.split('/').count());
-        *by_extension.entry(if file.extension.is_empty() { "(none)".into() } else { file.extension.clone() }).or_default() += 1;
-        if file.kind == "markdown" { markdown_count += 1; } else { attachment_count += 1; }
+        *by_extension
+            .entry(if file.extension.is_empty() {
+                "(none)".into()
+            } else {
+                file.extension.clone()
+            })
+            .or_default() += 1;
+        if file.kind == "markdown" {
+            markdown_count += 1;
+        } else {
+            attachment_count += 1;
+        }
     }
     Ok(serde_json::json!({
         "schema": 1,
@@ -2399,7 +2409,11 @@ mod tests {
     fn diagnostics_report_is_aggregate_only() {
         let root = fixture();
         fs::create_dir_all(root.join("Private Projects")).unwrap();
-        fs::write(root.join("Private Projects").join("Secret.md"), "Sensitive note content").unwrap();
+        fs::write(
+            root.join("Private Projects").join("Secret.md"),
+            "Sensitive note content",
+        )
+        .unwrap();
         fs::write(root.join("image.png"), [1_u8, 2, 3]).unwrap();
         let report = diagnostics_report(&root, "0.7.0-test").unwrap();
         let serialized = report.to_string();

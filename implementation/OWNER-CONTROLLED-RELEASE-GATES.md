@@ -32,3 +32,17 @@ The local readiness report is **29/39**. The remaining owner-controlled gates ar
 The local evidence is reproducible with `node tools/release-readiness.mjs` and
 `node tools/verify-release-artifacts.mjs`. These commands report evidence; they do
 not bypass any owner-controlled gate.
+
+## One-command local qualification
+
+On Windows from the repository root, run:
+
+```powershell
+.\tools\run-local-gates.ps1
+```
+
+This runs the JavaScript suite, Rust format/tests/clippy, exact release-artifact
+verification, and refreshes the readiness evidence. The script returns success
+when all locally executable gates pass; the readiness report can still list
+owner-controlled or external gates as blocked. Use `-SkipRust` or
+`-SkipArtifacts` only for a deliberately narrower diagnostic run.

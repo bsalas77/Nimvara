@@ -38,7 +38,7 @@ test("canvas edge proposals validate nodes and remain review-only", () => {
 });
 
 test("Canvas UI exposes review-first checkpoint restore", () => {
-  const source = readFileSync(path.join(process.cwd(), "app", "public", "canvas-ui.js"), "utf8");
+  const source = readFileSync(path.join(import.meta.dirname, "..", "public", "canvas-ui.js"), "utf8");
   assert.match(source, /Canvas history/);
   assert.match(source, /Restore this Canvas checkpoint/);
   assert.match(source, /expectedHash: canvas\.hash/);
