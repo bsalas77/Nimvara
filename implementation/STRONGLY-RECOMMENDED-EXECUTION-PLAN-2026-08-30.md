@@ -6,7 +6,7 @@ This is the execution order for the 13 workstreams requested by the product owne
 |---:|---|---|---|
 | 1 | Attachments, link diagnostics, migration validation | Local diagnostics, safe previews, preservation, ranked candidates, reviewed repair application, and copy/verify validated | Native byte upload/drop, consented vault-copy usability |
 | 2 | Editor and keyboard workflow | Byte-preserving textarea, keyboard shortcuts, and dependency-free accessible Markdown toolbar for bold/italic/code/link/heading/list transforms | Syntax-preserving editor, large-note UI sessions, and keyboard audit |
-| 3 | Kanban and graph/canvas workflows | Saved Kanban boards/custom columns, reviewable mind-map proposals, and conflict-safe Canvas node saves with schema/size limits | Canvas checkpoint/history UI, richer edge/node editing, and rollback evidence |
+| 3 | Kanban and graph/canvas workflows | Saved Kanban boards/custom columns, reviewable mind-map proposals, conflict-safe Canvas node saves with schema/size limits, and validated review-only edge proposals | Canvas checkpoint/history UI, richer edge/node editing UI, and rollback evidence |
 | 4 | Encrypted backup and restore drills | Verified snapshots/restore, bounded scheduler, authenticated encryption, user-initiation, and password rotation are validated | Protected OS key-store integration, unattended scheduling, and periodic restore evidence |
 | 5 | Large-vault performance | Reproducible 10,000-note and long-note/attachment baselines recorded | Real-vault, startup, and minimum-hardware evidence |
 | 6 | Two-device sync | Reconciliation harness exists | Live OneDrive/device matrix |

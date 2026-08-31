@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { layoutMindMap, parseMindMap, proposeCanvasNodeMove } from "../public/mindmap.js";
+import { layoutMindMap, parseMindMap, proposeCanvasEdge, proposeCanvasNodeMove } from "../public/mindmap.js";
 
 test("mind map derives branches from Markdown without changing source", () => {
   const markdown = "# Plan\n## Research\n- Interview\n  - Synthesize\n## Build\n";
@@ -25,6 +25,14 @@ test("mind map layout is deterministic and keeps every node reachable", () => {
   assert.deepEqual(first, second);
   assert.equal(first.edges.length, first.nodes.length - 1);
   assert.ok(first.width >= 720 && first.height >= 360);
+});
+
+test("canvas edge proposals validate nodes and remain review-only", () => {
+  const source = JSON.stringify({ nodes: [{ id: "a" }, { id: "b" }], edges: [] });
+  const proposal = proposeCanvasEdge(source, "a", "b");
+  assert.match(proposal.content, /nimvara-edge-a-b/);
+  assert.throws(() => proposeCanvasEdge(source, "a", "a"), /cannot connect/);
+  assert.throws(() => proposeCanvasEdge(JSON.stringify({ nodes: [{ id: "a" }], edges: [] }), "a", "b"), /Both Canvas nodes/);
 });
 
 test("canvas moves produce reviewable JSON proposals without mutating source", () => {

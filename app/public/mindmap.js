@@ -59,3 +59,17 @@ export function proposeCanvasNodeMove(canvasJson, nodeId, x, y) {
   node.x = nextX; node.y = nextY;
   return { content: `${JSON.stringify(document, null, 2)}\n`, before, after: { x: nextX, y: nextY }, nodeId: String(nodeId) };
 }
+
+export function proposeCanvasEdge(canvasJson, fromNodeId, toNodeId) {
+  let document;
+  try { document = JSON.parse(String(canvasJson)); } catch { throw new Error("Canvas source is not valid JSON."); }
+  if (!document || !Array.isArray(document.nodes) || !Array.isArray(document.edges)) throw new Error("Canvas source has no node and edge lists.");
+  const from = String(fromNodeId), to = String(toNodeId);
+  if (!document.nodes.some((item) => String(item.id) === from) || !document.nodes.some((item) => String(item.id) === to)) throw new Error("Both Canvas nodes must exist.");
+  if (from === to) throw new Error("A Canvas edge cannot connect a node to itself.");
+  if (document.edges.some((edge) => String(edge.fromNode ?? edge.from) === from && String(edge.toNode ?? edge.to) === to)) throw new Error("That Canvas edge already exists.");
+  const edgeId = `nimvara-edge-${from}-${to}`;
+  if (document.edges.some((edge) => String(edge.id) === edgeId)) throw new Error("The proposed Canvas edge id already exists.");
+  document.edges.push({ id: edgeId, fromNode: from, toNode: to });
+  return { content: `${JSON.stringify(document, null, 2)}\n`, edgeId, fromNodeId: from, toNodeId: to };
+}
