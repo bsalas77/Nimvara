@@ -2443,6 +2443,35 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "measured release benchmark"]
+    fn benchmark_search_long_notes_with_attachments() {
+        let root = fixture();
+        let start_create = Instant::now();
+        let body = "Long-note paragraph with Unicode café 🏮 and searchable context. ".repeat(160);
+        for index in 0..1_000 {
+            let folder = root.join(format!("projects/{:02}", index % 25));
+            fs::create_dir_all(folder.join("assets")).unwrap();
+            fs::write(folder.join(format!("Long-{index:04}.md")), format!("# Long note {index}\n\n{body}\nneedle-long-form-{index}\n")).unwrap();
+            fs::write(folder.join("assets").join(format!("image-{index:04}.bin")), vec![7u8; 4096]).unwrap();
+        }
+        let create_ms = start_create.elapsed().as_millis();
+        let cache_root = fixture();
+        let cache = cache_root.join("index.json");
+        let start_index = Instant::now();
+        let (index, report) = build_search_index_cached(&root, &cache).unwrap();
+        let index_ms = start_index.elapsed().as_millis();
+        let start_search = Instant::now();
+        let results = search_index(&index, "needle-long-form-999").unwrap();
+        let search_us = start_search.elapsed().as_micros();
+        assert_eq!(index.notes.len(), 1_000);
+        assert_eq!(report.refreshed, 1_000);
+        assert_eq!(results.len(), 1);
+        println!("{{\"notes\":1000,\"attachments\":1000,\"createMs\":{create_ms},\"coldIndexMs\":{index_ms},\"warmSearchUs\":{search_us}}}");
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_dir_all(cache_root).unwrap();
+    }
+
+    #[test]
     fn persistent_search_cache_is_incremental_disposable_and_self_healing() {
         let root = fixture();
         let cache_root = fixture();
