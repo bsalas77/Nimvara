@@ -19,6 +19,7 @@ The API binds to `127.0.0.1` only. CORS is limited to the Tauri local origin. Re
 - `nimvara_read_note`
 - `nimvara_search`
 - `nimvara_note_context`
+- `nimvara_diagnostics` (aggregate-only workspace health facts)
 
 There is deliberately no MCP write tool. A future reviewed-write capability must remain inside the desktop approval/checkpoint flow and require typed, bounded actions. MCP input and note text are untrusted data.
 

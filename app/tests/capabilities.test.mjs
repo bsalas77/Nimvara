@@ -8,7 +8,7 @@ const root = path.resolve(import.meta.dirname, "..");
 
 test("MCP bridge is read-only and declares expected tools", async () => {
   const source = await readFile(path.join(root, "server", "mcp-server.mjs"), "utf8");
-  for (const tool of ["nimvara_capabilities", "nimvara_list_notes", "nimvara_read_note", "nimvara_search", "nimvara_note_context"]) assert.match(source, new RegExp(tool));
+  for (const tool of ["nimvara_capabilities", "nimvara_list_notes", "nimvara_read_note", "nimvara_search", "nimvara_note_context", "nimvara_diagnostics"]) assert.match(source, new RegExp(tool));
   assert.doesNotMatch(source, /saveMarkdown|restoreSnapshot|write_note|delete_note/);
 });
 
