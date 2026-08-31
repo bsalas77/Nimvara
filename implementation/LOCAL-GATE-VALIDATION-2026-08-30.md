@@ -15,7 +15,7 @@ the release-readiness evidence generator.
 
 ## Observed result
 
-- JavaScript: **84/84 passed**.
+- JavaScript: **86/86 passed** (including Windows installer retention/identity regressions).
 - Rust: formatting, **26 tests passed**, and clippy with `-D warnings` passed.
 - RustSec: **0 unignored vulnerabilities**; 16 allowed maintenance/yank warnings
   remain tracked by the dependency policy.
