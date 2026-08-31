@@ -13,4 +13,7 @@ This artifact record preserves the 2026-08-31 build evidence. Its embedded relea
 
 The optimized native test profile was rerun on 2026-08-31: 26 tests passed and 2 benchmark tests were intentionally ignored. The resulting `app/src-tauri/target/release/nimvara.exe` was used to rebuild the Windows installer and MSIX above.
 
-The committed verifier `node tools/verify-release-artifacts.mjs` was rerun after the rebuild and returned `verified: true` for all four listed artifacts.
+The committed verifiers `node tools/verify-release-artifacts.mjs` and
+`node tools/verify-sbom.mjs` were rerun after the rebuild. Both returned
+`verified: true`; the SBOM contains 480 unique package components with valid
+CycloneDX 1.5 metadata and SHA-256 fields.

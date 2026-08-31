@@ -34,6 +34,7 @@ try {
   if (-not $SkipArtifacts) {
     Write-Host '[4/5] Release artifact byte/hash verification'
     node tools/verify-release-artifacts.mjs; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    node tools/verify-sbom.mjs; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   } else {
     Write-Host '[4/5] Artifact verification skipped by request'
   }
