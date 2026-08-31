@@ -4,6 +4,21 @@ import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlow
 
 const $ = (id) => document.getElementById(id);
 let workspace = null, files = [], note = null, dirty = false, ingestionPreview = null, aiProposal = null, diskConflict = null, workspaceSignature = null, workspaceEvents = null, recoveryTimer = null, currentContext = null, selectedMapNode = null, mapEditProposal = null, taskChangeProposal = null, propertyEditProposal = null, lastCompatibilityReport = null, openTabs = JSON.parse(localStorage.getItem("nimvara-open-tabs") || "[]"), favorites = readFavorites();
+function declutterInspector() {
+  const collapsed = new Set(["Private AI", "Capture and import", "Properties and views", "PDF annotations", "Snapshot backup", "Workspace settings", "Kanban board", "Migration check", "Canvas viewer"]);
+  document.querySelectorAll(".inspector > section").forEach((section) => {
+    const heading = section.querySelector("h2");
+    if (!heading || !collapsed.has(heading.textContent.trim())) return;
+    const details = document.createElement("details");
+    details.className = "tool-disclosure";
+    const summary = document.createElement("summary");
+    summary.textContent = heading.textContent.trim();
+    details.append(summary);
+    section.parentElement.insertBefore(details, section);
+    details.append(section);
+  });
+}
+declutterInspector();
 function readFavorites() { try { const value = JSON.parse(localStorage.getItem("nimvara-favorites") || "[]"); return Array.isArray(value) ? value.filter((item) => typeof item === "string").slice(0, 50) : []; } catch { return []; } }
 const favoritesPanel = document.createElement("section"); favoritesPanel.id = "favoritesPanel"; favoritesPanel.innerHTML = "<h2>Favorites</h2><div id=\"favorites\"><p class=\"muted\">Favorite notes appear here.</p></div>"; $("query").closest(".search").after(favoritesPanel);
 const recentPanel = document.createElement("section"); recentPanel.id = "recentPanel"; recentPanel.innerHTML = "<h2>Recent</h2><div id=\"recentNotes\"><p class=\"muted\">Recently opened notes appear here.</p></div>"; favoritesPanel.after(recentPanel);
