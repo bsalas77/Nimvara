@@ -18,4 +18,5 @@ mkdir -p -- "$resources/app"
 cp -R -- "$project/sample-workspace" "$resources/app/"
 
 cargo test --locked --manifest-path "$tauri_root/Cargo.toml"
+cd "$tauri_root"
 cargo tauri build --config "$tauri_root/tauri.macos.conf.json" --bundles app,dmg

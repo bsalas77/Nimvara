@@ -39,6 +39,7 @@ let child;
 let socket;
 let nextId = 1;
 const pending = new Map();
+const browserErrors = [];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function launch(port) {
@@ -46,7 +47,7 @@ async function launch(port) {
     env: {
       ...process.env,
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
-      WEBVIEW2_USER_DATA_FOLDER: path.join(root, `webview2-${port}`),
+      WEBVIEW2_USER_DATA_FOLDER: path.join(root, "webview2"),
     },
     stdio: "ignore",
   });
@@ -67,11 +68,13 @@ async function launch(port) {
   });
   socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
+    if (message.method === "Runtime.exceptionThrown") browserErrors.push(message.params.exceptionDetails);
     if (message.id && pending.has(message.id)) {
       pending.get(message.id)(message);
       pending.delete(message.id);
     }
   };
+  await cdp("Runtime.enable");
 }
 
 async function cdp(method, params = {}) {
@@ -93,7 +96,8 @@ async function waitFor(expression, label) {
     if (await evaluate(expression)) return;
     await sleep(200);
   }
-  throw new Error(`Timed out waiting for ${label}`);
+  const state = await evaluate(`({status: document.querySelector('#welcomeStatus')?.textContent, api: typeof window.nimvaraApi, openHandler: typeof document.querySelector('#open')?.onclick})`);
+  throw new Error(`Timed out waiting for ${label}: ${JSON.stringify({state, browserErrors})}`);
 }
 
 async function stop() {
@@ -126,16 +130,18 @@ const report = { sourceVaultMutated: null, copiedVault: workspace, checks: {} };
 
 try {
   await launch(9331);
-  await waitFor(`Boolean(document.querySelector("#workspacePath"))`, "first-run UI");
+  await waitFor(`typeof document.querySelector("#open")?.onclick === "function"`, "first-run UI handlers");
   await evaluate(`document.querySelector("#workspacePath").value=${JSON.stringify(workspace)}; document.querySelector("#open").click();`);
   await waitFor(`!document.querySelector("#shell").classList.contains("hidden")`, "workspace shell");
   report.checks.workspaceOpen = await evaluate(`document.querySelectorAll("#files button").length >= 1`);
   report.checks.fileTree = await evaluate(`document.querySelectorAll("#files details").length > 0`);
   report.checks.accessibility = await evaluate(`(() => {
     const controls=[...document.querySelectorAll("input,textarea,button")];
-    const named=controls.every(el => el.tagName==="BUTTON" ? el.textContent.trim().length>0 : Boolean(el.getAttribute("aria-label") || (el.id && document.querySelector('label[for="'+el.id+'"]')) || el.closest("label")));
+    const unnamed=controls.filter(el => !Boolean(el.getAttribute("aria-label") || (el.id && document.querySelector('label[for="'+el.id+'"]')) || el.closest("label") || (el.tagName==="BUTTON" && el.textContent.trim())));
+    const named=unnamed.length===0;
     return document.documentElement.lang==="en" && named && document.querySelectorAll('[role="status"][aria-live]').length>=2 && Boolean(document.querySelector(".skip-link"));
   })()`);
+  report.unnamedControls = await evaluate(`Array.from(document.querySelectorAll('input,textarea,button')).filter(el=>!Boolean(el.getAttribute('aria-label')||(el.id&&document.querySelector('label[for="'+el.id+'"]'))||el.closest('label')||(el.tagName==='BUTTON'&&el.textContent.trim()))).map(el=>({tag:el.tagName,id:el.id}))`);
   await evaluate(`document.querySelector("#showTasks").click()`);
   await waitFor(`document.querySelector("#tasks").textContent.includes("Complete safely")`, "native task dashboard");
   await evaluate(`[...document.querySelectorAll("#tasks .task-row")].find(row=>row.textContent.includes("Complete safely")).querySelector("[data-task-toggle]").click()`);
@@ -182,7 +188,7 @@ try {
   await stop();
 
   await launch(9332);
-  await waitFor(`Boolean(document.querySelector("#workspacePath"))`, "restarted UI");
+  await waitFor(`typeof document.querySelector("#open")?.onclick === "function"`, "restarted UI handlers");
   await evaluate(`document.querySelector("#workspacePath").value=${JSON.stringify(workspace)}; document.querySelector("#open").click();`);
   await waitFor(`!document.querySelector("#recovery").classList.contains("hidden")`, "recovery prompt");
   await evaluate(`document.querySelector("#recoverDraft").click(); document.dispatchEvent(new KeyboardEvent("keydown",{key:"s",ctrlKey:true,bubbles:true}));`);

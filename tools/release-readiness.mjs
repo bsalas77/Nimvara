@@ -48,6 +48,22 @@ check("EXTENSION_PACKAGE_INSTALL", read("app/server/extension-package.mjs").incl
 check("KANBAN_RUNTIME", existsSync(resolve(root, "app/public/kanban-runtime.js")) && read("app/public/kanban-runtime.js").includes("window.runKanban"), "Kanban opens through a defined read-only renderer with task filtering and visible status columns.");
 check("DEPENDENCY_POLICY", existsSync(resolve(root, "app/src-tauri/third_party/glib-0.18.5-patched/PROVENANCE.md")) && existsSync(resolve(root, "implementation/SECURITY-VALIDATION-2026-08-30.md")), "No unignored RustSec vulnerabilities were reported. RUSTSEC-2024-0429 is repaired by the reviewed backport; the latest cached audit reports 16 allowed maintenance/yank warnings, which remain explicitly tracked and require release review.");
 
+// Source presence is evidence of implementation, not proof of shipped behavior.
+// These engineering acceptance gates stay closed until qualification is attached.
+for (const [id, evidence] of [
+  ["WINDOWS_INSTALLED_UI", "2026-09-04 installed test passed 16/17 assertions; the remaining accessible-name fix requires rebuild and installed retest."],
+  ["WINDOWS_CLEAN_LIFECYCLE", "Clean ordinary-user install, older-version upgrade, rollback and uninstall-retention qualification remain open."],
+  ["LINUX_CURRENT_GUI", "Existing DEB passed container install/reinstall/removal and retention; current-source rebuild and X11/Wayland graphical qualification remain open."],
+  ["NATIVE_ROUTE_PARITY", "Migration, extension and encrypted-backup service implementations need native route parity qualification before claiming shipped desktop support."],
+  ["PERSISTENT_CREDENTIAL_VAULT", "Session-only credentials are supported; protected persistent OS credential storage is not implemented/qualified."],
+  ["REAL_MODEL_QUALIFICATION", "Real model retrieval/citation quality, provider compatibility, cancellation, resource and thermal measurements remain open."],
+  ["ISOLATED_EXTENSION_HOST", "Signature/package validation does not establish permission-isolated execution of extension code."],
+  ["CONNECTOR_BROWSER_CAPTURE", "Browser extension and authenticated connector implementations and permission-flow tests remain open."],
+  ["MOBILE_NATIVE_CLIENTS", "Mobile capability contracts do not constitute native mobile capture/edit/offline/document-provider clients."],
+  ["MARKDOWN_PARITY_QUALIFICATION", "Broader Markdown/Obsidian rendering and minimum-hardware real-vault qualification remain open."],
+  ["UPDATE_ROLLBACK_FLIGHT", "Staged update verification, rollback and provenance flight qualification remain open."]
+]) check(id, false, evidence);
+
 const artifacts = [
   "dist/Nimvara-Setup-0.7.0-dev.exe",
   "dist/Nimvara-0.7.0-dev.msix",
