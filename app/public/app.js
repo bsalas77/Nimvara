@@ -71,6 +71,7 @@ async function api(url, options = {}) {
     try {
       if (method === "GET" && parsed.pathname === "/api/status") return window.__TAURI__.core.invoke("native_status");
       if (method === "POST" && parsed.pathname === "/api/workspace") return window.__TAURI__.core.invoke("native_open_workspace", input);
+      if (method === "POST" && parsed.pathname === "/api/migration/copy") return window.__TAURI__.core.invoke("native_migrate_workspace", input);
       if (method === "GET" && parsed.pathname === "/api/files") return window.__TAURI__.core.invoke("native_list_files");
       if (method === "GET" && parsed.pathname === "/api/file") return window.__TAURI__.core.invoke("native_read_note", { path: parsed.searchParams.get("path") });
       if (method === "PUT" && parsed.pathname === "/api/file") return window.__TAURI__.core.invoke("native_save_note", { path: input.path, content: input.content, expectedHash: input.expectedHash ?? null });

@@ -475,6 +475,14 @@ fn native_workspace_state(
 }
 
 #[tauri::command]
+fn native_migrate_workspace(
+    source: String,
+    destination: String,
+) -> Result<native_core::MigrationReport, String> {
+    native_core::migrate_workspace(&source, &destination)
+}
+
+#[tauri::command]
 fn native_save_conflict_copy(
     path: String,
     content: String,
@@ -800,6 +808,7 @@ fn main() {
             native_run_backup_now,
             native_workspace_files,
             native_workspace_state,
+            native_migrate_workspace,
             native_save_conflict_copy,
             native_reveal_file,
             native_read_attachment_preview,

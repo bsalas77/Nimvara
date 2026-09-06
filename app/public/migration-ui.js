@@ -19,6 +19,10 @@ async function requestCancel(destination) {
 function wireMigrationPanel() {
   const button = byId("migrateWorkspace");
   if (!button || button.dataset.progressWired) return;
+  // Native migration is a single verified command. It does not expose a
+  // browser-only polling/cancellation endpoint, so do not add controls that
+  // would falsely imply they work in the packaged application.
+  if (window.__TAURI__?.core?.invoke) return;
   button.dataset.progressWired = "true";
   const destination = byId("migrationDestination");
   const status = byId("migrationStatus");

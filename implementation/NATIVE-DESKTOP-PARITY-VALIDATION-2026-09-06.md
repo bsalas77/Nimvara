@@ -49,10 +49,31 @@ It was built after the test results above. It has not been installed over the
 currently running copy, so installed upgrade/uninstall retention evidence is
 still intentionally open.
 
+## Migration follow-up
+
+The native migration command was subsequently added and exercised through the
+same temporary-copy desktop harness. It only accepts an existing non-link source
+folder and a destination that does not exist, rejects destinations inside the
+source, excludes `.lantern`, verifies every copied byte, publishes a manifest at
+the end, and removes the destination it created if it fails.
+
+- executable SHA-256:
+  `377e29ebb29efee88a159944931d60400f62da89da9a1ef7ab17d443132e5089`
+- 32/32 automated desktop workflow checks passed, including migration.
+- source workspace mutation check: `false`; uncaught browser errors: none.
+
+This newer executable supersedes the earlier source-build hash for native smoke
+evidence. Its matching installer has not yet been installed over the running
+user copy.
+
+The matching unsigned per-user installer is
+`dist/Nimvara-Setup-0.7.0-dev-migration.exe` (5,259,934 bytes), SHA-256
+`8067a05eb97afbf742c0fa576a7117b2c99be8ce56ff0a40a1344e5cc93025cb`.
+
 ## Still deliberately open
 
-- Safe vault migration and extension management still use service-only
-  implementations; they are not counted as native-desktop parity.
+- Extension management still uses a service-only implementation; it is not
+  counted as native-desktop parity.
 - This does not prove real human Canvas/Kanban usability, large-vault
   performance, Linux graphical runtime behavior, macOS behavior, or release
   signing/update operations.

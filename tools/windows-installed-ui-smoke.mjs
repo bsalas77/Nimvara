@@ -260,6 +260,14 @@ try {
   const restored = await evaluate(`window.__TAURI__.core.invoke("native_restore_snapshot",{snapshotPath:${JSON.stringify(snapshot.path)},destination:${JSON.stringify(restore)}})`);
   report.checks.backupRestore = restored.verified && (await digestTree(workspace)) === (await digestTree(restore));
 
+  const migrationDestination = path.join(root, "migrated-vault");
+  const beforeMigration = await digestTree(workspace);
+  const migration = await evaluate(`window.__TAURI__.core.invoke("native_migrate_workspace",{source:${JSON.stringify(workspace)},destination:${JSON.stringify(migrationDestination)}})`);
+  report.checks.migration = migration.files.length > 0
+    && (await readFile(path.join(migrationDestination, ".nimvara-migration.json"), "utf8")).includes('"schema": 1')
+    && !((await readdir(migrationDestination)).includes(".lantern"))
+    && beforeMigration === await digestTree(workspace);
+
   const disk = await evaluate(`window.__TAURI__.core.invoke("native_read_note",{path:${JSON.stringify(notePath)}})`);
   await writeFile(noteFullPath, `${originalCopy}\nexternal OneDrive-style change`, "utf8");
   const conflict = await evaluate(`window.__TAURI__.core.invoke("native_save_note",{path:${JSON.stringify(notePath)},content:"unsafe overwrite",expectedHash:${JSON.stringify(disk.hash)}}).then(()=>false,()=>true)`);

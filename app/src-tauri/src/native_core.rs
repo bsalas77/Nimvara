@@ -1149,6 +1149,118 @@ pub fn workspace_files(root: &Path) -> Result<Vec<WorkspaceFile>, String> {
     Ok(files)
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrationFile {
+    pub path: String,
+    pub bytes: u64,
+    pub sha256: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MigrationReport {
+    pub schema: u8,
+    pub source: String,
+    pub destination: String,
+    pub created_at: String,
+    pub files: Vec<MigrationFile>,
+}
+
+/// Copies a vault into a brand-new sibling or external folder. The source and
+/// Nimvara-private metadata are never written; every copied byte is re-hashed
+/// before the manifest is published.
+pub fn migrate_workspace(
+    source_path: &str,
+    destination_path: &str,
+) -> Result<MigrationReport, String> {
+    let source_input = PathBuf::from(source_path.trim());
+    if source_path.trim().is_empty() || destination_path.trim().is_empty() {
+        return Err("MIGRATION_PATH: Choose both a source vault and a new destination.".into());
+    }
+    let source_metadata = fs::symlink_metadata(&source_input).map_err(|_| {
+        "MIGRATION_SOURCE: Source vault must be an existing, non-link folder.".to_string()
+    })?;
+    if !source_metadata.is_dir() || source_metadata.file_type().is_symlink() {
+        return Err("MIGRATION_SOURCE: Source vault must be an existing, non-link folder.".into());
+    }
+    let source =
+        fs::canonicalize(&source_input).map_err(|error| format!("MIGRATION_SOURCE: {error}"))?;
+    let destination_input = PathBuf::from(destination_path.trim());
+    let destination = if destination_input.is_absolute() {
+        destination_input
+    } else {
+        std::env::current_dir()
+            .map_err(|error| format!("MIGRATION_DESTINATION: {error}"))?
+            .join(destination_input)
+    };
+    if fs::symlink_metadata(&destination).is_ok() {
+        return Err(
+            "MIGRATION_DESTINATION: Destination must not already exist; choose a new empty path."
+                .into(),
+        );
+    }
+    let parent = destination
+        .parent()
+        .ok_or_else(|| "MIGRATION_DESTINATION: Choose a folder, not a drive root.".to_string())?;
+    let parent = fs::canonicalize(parent)
+        .map_err(|_| "MIGRATION_DESTINATION: Destination parent must already exist.".to_string())?;
+    if parent.starts_with(&source) {
+        return Err(
+            "MIGRATION_DESTINATION: Migration destination must be outside the source vault.".into(),
+        );
+    }
+    let name = destination
+        .file_name()
+        .ok_or_else(|| "MIGRATION_DESTINATION: Choose a folder name.".to_string())?;
+    let destination = parent.join(name);
+    if destination == source || destination.starts_with(&source) {
+        return Err(
+            "MIGRATION_DESTINATION: Migration destination must be outside the source vault.".into(),
+        );
+    }
+    let mut entries = Vec::new();
+    walk_files(&source, &source, &mut entries)?;
+    fs::create_dir(&destination).map_err(|error| format!("MIGRATION_DESTINATION: {error}"))?;
+    let result = (|| {
+        let mut files = Vec::with_capacity(entries.len());
+        for (absolute, relative) in entries {
+            let target = destination.join(relative.split('/').collect::<PathBuf>());
+            let bytes = fs::read(&absolute).map_err(|error| format!("MIGRATION_READ: {error}"))?;
+            write_bytes_atomic(&target, &bytes)?;
+            let verified =
+                fs::read(&target).map_err(|error| format!("MIGRATION_VERIFY: {error}"))?;
+            if hash(&bytes) != hash(&verified) {
+                return Err(format!(
+                    "MIGRATION_VERIFY: Copied file failed verification: {relative}"
+                ));
+            }
+            files.push(MigrationFile {
+                path: relative,
+                bytes: bytes.len() as u64,
+                sha256: hash(&bytes),
+            });
+        }
+        let report = MigrationReport {
+            schema: 1,
+            source: source.to_string_lossy().to_string(),
+            destination: destination.to_string_lossy().to_string(),
+            created_at: OffsetDateTime::now_utc()
+                .format(&Rfc3339)
+                .unwrap_or_default(),
+            files,
+        };
+        let manifest = serde_json::to_vec_pretty(&report)
+            .map_err(|error| format!("MIGRATION_MANIFEST: {error}"))?;
+        write_bytes_atomic(&destination.join(".nimvara-migration.json"), &manifest)?;
+        Ok(report)
+    })();
+    if result.is_err() {
+        let _ = fs::remove_dir_all(&destination);
+    }
+    result
+}
+
 pub fn workspace_state(root: &Path, relative: Option<&str>) -> Result<WorkspaceState, String> {
     let files = workspace_files(root)?;
     let signature_source = files
@@ -2743,5 +2855,48 @@ mod tests {
         let data = fs::read_to_string(root.join(META).join("kanban-boards.json")).unwrap();
         assert!(!data.contains("Markdown"));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn migration_copies_bytes_verifies_manifest_and_never_changes_source() {
+        let parent = fixture();
+        let source = parent.join("source");
+        let destination = parent.join("migrated");
+        fs::create_dir(&source).unwrap();
+        fs::create_dir(source.join("Attachments")).unwrap();
+        fs::create_dir(source.join(META)).unwrap();
+        fs::write(source.join("Note.md"), "# Résumé\n\nKeep bytes.").unwrap();
+        fs::write(source.join("Attachments").join("image.bin"), [0_u8, 1, 255]).unwrap();
+        fs::write(source.join(META).join("private.json"), "do not copy").unwrap();
+        let before = fs::read(source.join("Note.md")).unwrap();
+
+        let report = migrate_workspace(
+            source.to_string_lossy().as_ref(),
+            destination.to_string_lossy().as_ref(),
+        )
+        .unwrap();
+
+        assert_eq!(report.files.len(), 2);
+        assert_eq!(fs::read(destination.join("Note.md")).unwrap(), before);
+        assert_eq!(
+            fs::read(destination.join("Attachments").join("image.bin")).unwrap(),
+            [0_u8, 1, 255]
+        );
+        assert!(!destination.join(META).exists());
+        assert!(destination.join(".nimvara-migration.json").is_file());
+        assert_eq!(fs::read(source.join("Note.md")).unwrap(), before);
+        assert!(migrate_workspace(
+            source.to_string_lossy().as_ref(),
+            destination.to_string_lossy().as_ref(),
+        )
+        .unwrap_err()
+        .starts_with("MIGRATION_DESTINATION:"));
+        assert!(migrate_workspace(
+            source.to_string_lossy().as_ref(),
+            source.join("nested").to_string_lossy().as_ref(),
+        )
+        .unwrap_err()
+        .starts_with("MIGRATION_DESTINATION:"));
+        fs::remove_dir_all(parent).unwrap();
     }
 }
