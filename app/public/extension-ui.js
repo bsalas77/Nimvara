@@ -9,6 +9,10 @@ async function loadExtensions(list, status) {
 }
 
 function mountExtensions() {
+  // The package does not yet have an isolated native extension host. Do not
+  // render development-service controls in a desktop build and imply they are
+  // usable there. This preserves the permission boundary until it exists.
+  if (window.__TAURI__?.core?.invoke) return;
   if (document.getElementById("extensionManager")) return;
   const anchor = document.querySelector(".inspector section:last-of-type"); if (!anchor) return;
   const section = document.createElement("section"); section.id = "extensionManager"; section.innerHTML = '<h2>Extensions</h2><p>Extensions are local, permission-limited, and disabled until you explicitly enable them. Unsigned builds are development-only.</p><label for="extensionTrustedKey">Trusted Ed25519 public key (PEM)</label><textarea id="extensionTrustedKey" rows="4" placeholder="-----BEGIN PUBLIC KEY-----"></textarea><button id="trustExtensionKey" class="secondary">Trust key for this session</button><p id="trustedKeyList" class="muted"></p><label for="extensionManifest">Manifest JSON</label><textarea id="extensionManifest" rows="5" placeholder="{&quot;id&quot;:&quot;example.reader&quot;,&quot;name&quot;:&quot;Example Reader&quot;,&quot;version&quot;:&quot;1.0.0&quot;,&quot;permissions&quot;:[&quot;notes:read&quot;]}"></textarea><div class="actions compact"><button id="registerExtension">Register</button><button id="refreshExtensions" class="secondary">Refresh</button></div><p id="extensionStatus" class="status" role="status"></p><ul id="extensionList"></ul>';

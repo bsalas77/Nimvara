@@ -72,8 +72,9 @@ The matching unsigned per-user installer is
 
 ## Still deliberately open
 
-- Extension management still uses a service-only implementation; it is not
-  counted as native-desktop parity.
+- Extension management remains service-only. Its development controls are
+  deliberately not rendered in the packaged desktop app until an isolated native
+  extension host exists; it is not counted as native-desktop parity.
 - This does not prove real human Canvas/Kanban usability, large-vault
   performance, Linux graphical runtime behavior, macOS behavior, or release
   signing/update operations.

@@ -6,13 +6,14 @@ const root = new URL("../", import.meta.url);
 const readPublic = (file) => readFile(new URL(`public/${file}`, root), "utf8");
 
 test("native interactive boards and canvas edits use the direct desktop route adapter", async () => {
-  const [adapter, canvas, boards, runtime, app, migration] = await Promise.all([
+  const [adapter, canvas, boards, runtime, app, migration, extensions] = await Promise.all([
     readPublic("desktop-request.js"),
     readPublic("canvas-ui.js"),
     readPublic("kanban-boards-ui.js"),
     readPublic("kanban-runtime.js"),
     readPublic("app.js"),
-    readPublic("migration-ui.js")
+    readPublic("migration-ui.js"),
+    readPublic("extension-ui.js")
   ]);
   for (const route of [
     "GET /api/workspace-dashboard",
@@ -29,4 +30,5 @@ test("native interactive boards and canvas edits use the direct desktop route ad
   }
   assert.match(app, /native_migrate_workspace/);
   assert.match(migration, /window\.__TAURI__\?\.core\?\.invoke/);
+  assert.match(extensions, /window\.__TAURI__\?\.core\?\.invoke/);
 });
