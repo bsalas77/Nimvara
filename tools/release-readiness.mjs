@@ -51,7 +51,7 @@ check("DEPENDENCY_POLICY", existsSync(resolve(root, "app/src-tauri/third_party/g
 // Source presence is evidence of implementation, not proof of shipped behavior.
 // These engineering acceptance gates stay closed until qualification is attached.
 for (const [id, evidence] of [
-  ["WINDOWS_INSTALLED_UI", "2026-09-05 rebuilt native app passed 22/22 desktop checks. Avast AutoSandbox holds both setup candidates; installed upgrade/retest remains open."],
+  ["WINDOWS_INSTALLED_UI", "2026-09-05 polished native app passed 29/29 desktop checks. Avast exception requires manual action; installed upgrade/retest remains open."],
   ["WINDOWS_CLEAN_LIFECYCLE", "Clean ordinary-user install, older-version upgrade, rollback and uninstall-retention qualification remain open."],
   ["LINUX_CURRENT_GUI", "Existing DEB passed container install/reinstall/removal and retention; current-source rebuild and X11/Wayland graphical qualification remain open."],
   ["NATIVE_ROUTE_PARITY", "Migration, extension and encrypted-backup service implementations need native route parity qualification before claiming shipped desktop support."],

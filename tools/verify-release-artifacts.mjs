@@ -7,6 +7,7 @@ const manifest = JSON.parse(readFileSync(resolve(root, "implementation/RELEASE-A
 const expectedPaths = new Set([
   "dist/Nimvara-Setup-0.7.0-dev.exe",
   "dist/Nimvara-Setup-0.7.0-dev-nsis.exe",
+  "dist/Nimvara-Setup-0.7.0-dev-polished.exe",
   "dist/Nimvara-0.7.0-dev.msix",
   "dist/Nimvara_0.7.0_amd64.deb",
   "dist/nimvara.cdx.json"

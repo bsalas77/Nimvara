@@ -2,6 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlowchart, renderMarkdownPreview, sanitizeDiagnostics } from "../public/workspace-ui.js";
 
+test("preview folds YAML properties without executing or dropping their text", () => {
+  const source = '---\nstatus: active\ntitle: <script>unsafe</script>\n---\n# Note';
+  const result = renderMarkdownPreview(source);
+  assert.match(result, /frontmatter-preview/);
+  assert.match(result, /&lt;script&gt;unsafe/);
+  assert.doesNotMatch(result, /<script>/);
+  assert.match(result, /<h1>Note<\/h1>/);
+  assert.doesNotMatch(renderMarkdownPreview('---\nAn unfinished section'), /frontmatter-preview/);
+  assert.match(renderMarkdownPreview('---\nstatus: active\n---\n\n- [ ] Keep original line'), /data-preview-task-line="5"/);
+});
+
 test("file tree groups folders deterministically without changing paths", () => {
   const tree = buildFileTree(["Root.md", "Projects/B.md", "Projects/A.md", "Daily/2026.md"]);
   assert.deepEqual(tree.files, [{ name: "Root.md", path: "Root.md" }]);

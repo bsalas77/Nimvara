@@ -8,6 +8,7 @@ await import("./typed-properties.test.mjs");
 await import("./editor-tools.test.mjs");
 await import("./workspace-ui.test.mjs");
 await import("./preferences.test.mjs");
+await import("./workspace-shell.test.mjs");
 await import("./diagnostics.test.mjs");
 await import("./capabilities.test.mjs");
 await import("./extension-registry.test.mjs");

@@ -20,9 +20,18 @@ const inline = (value) => escapeHtml(value)
 
 export function renderMarkdownPreview(markdown) {
   const output = [], lines = String(markdown).split(/\r?\n/), footnotes = new Map(); let fenced = false, list = false, callout = null, math = false;
+  let firstContentLine = 0;
+  // Preserve properties as inspectable text and retain original task line numbers.
+  if (lines[0] === "---") {
+    const end = lines.findIndex((line, index) => index > 0 && line === "---");
+    if (end > 1 && end < 100 && lines.slice(1, end).some((line) => /^[A-Za-z_][\w-]*:/.test(line))) {
+      output.push(`<details class="frontmatter-preview"><summary>Note properties</summary><pre>${escapeHtml(lines.slice(1, end).join("\n"))}</pre></details>`);
+      firstContentLine = end + 1;
+    }
+  }
   const closeList = () => { if (list) { output.push("</ul>"); list = false; } };
   const closeCallout = () => { if (callout) { output.push("</div></aside>"); callout = null; } };
-  for (let index = 0; index < lines.length; index++) {
+  for (let index = firstContentLine; index < lines.length; index++) {
     const raw = lines[index];
     const footnote = raw.match(/^\[\^([^\]]+)\]:\s*(.+)$/); if (footnote) { footnotes.set(footnote[1], footnote[2]); continue; }
     if (/^\s*\$\$\s*$/.test(raw)) { closeList(); closeCallout(); math = !math; output.push(math ? '<div class="math-block">' : "</div>"); continue; }

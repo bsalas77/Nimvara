@@ -1,5 +1,9 @@
 # Engineering status — 2026-09-05
 
+Later this day: see `UI-REFRESH-VALIDATION-2026-09-05.md` for the newer polished
+installer, 29-check native UI result and manual Avast handoff. Earlier candidates
+and checks below remain historical evidence, not the latest interface build.
+
 Supersedes the Windows build-blocker section of the September 4 record. Production
 approval remains false; all unrelated open gates in that record remain open.
 

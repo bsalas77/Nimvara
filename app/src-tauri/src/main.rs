@@ -809,45 +809,6 @@ fn main() {
             native_commit_ingestion,
             native_cancel_ingestion
         ])
-        .setup(|app| {
-            // Some Windows display configurations restore a stale 50×50/off-screen
-            // window before the frontend loads. Enforce a usable first-launch frame
-            // from the native side; users can resize it normally afterward.
-            let window = app
-                .get_webview_window("main")
-                .ok_or_else(|| "main window was not created".to_string())?;
-            window
-                .set_size(tauri::Size::Logical(tauri::LogicalSize {
-                    width: 1440.0,
-                    height: 920.0,
-                }))
-                .map_err(|error| error.to_string())?;
-            window
-                .set_position(tauri::Position::Logical(tauri::LogicalPosition {
-                    x: 80.0,
-                    y: 60.0,
-                }))
-                .map_err(|error| error.to_string())?;
-            window.show().map_err(|error| error.to_string())?;
-            window.set_focus().map_err(|error| error.to_string())?;
-            Ok(())
-        })
-        .on_page_load(|webview, _payload| {
-            // Re-apply after WebView2 finishes navigation; on some Windows shells
-            // the initial frame is restored again during page creation.
-            if webview.label() == "main" {
-                let _ = webview.set_size(tauri::Size::Logical(tauri::LogicalSize {
-                    width: 1440.0,
-                    height: 920.0,
-                }));
-                let _ = webview.set_position(tauri::Position::Logical(tauri::LogicalPosition {
-                    x: 80.0,
-                    y: 60.0,
-                }));
-                let _ = webview.show();
-                let _ = webview.set_focus();
-            }
-        })
         .run(tauri::generate_context!())
         .expect("failed to run Nimvara");
 }

@@ -1,10 +1,11 @@
 {
   "schema": 1,
   "generatedAt": "2026-09-05",
-  "note": "Windows setup candidates rebuilt; installation blocked by Avast AutoSandbox. MSIX, DEB and SBOM retained from August 31, not rebuilt or newly qualified. Hash verification is not release approval.",
+  "note": "Windows setup candidates rebuilt; polished variant contains the document-first UI. Installation remains unverified behind Avast AutoSandbox; antivirus settings were not changed. MSIX, DEB and SBOM retained from August 31, not rebuilt or newly qualified. Hash verification is not release approval.",
   "artifacts": [
     { "path": "dist/Nimvara-Setup-0.7.0-dev.exe", "bytes": 4783104, "sha256": "4facdf9bfbe46ae7083564022bfea6da0c498675a0a367327df39e3bb97d9824" },
     { "path": "dist/Nimvara-Setup-0.7.0-dev-nsis.exe", "bytes": 5247215, "sha256": "98ad307b50e1fc90d38105c55db26befc5d1cb59b0d2ff015c0b6209b59199e2" },
+    { "path": "dist/Nimvara-Setup-0.7.0-dev-polished.exe", "bytes": 5248575, "sha256": "e45294c4a1d88625397620c73f86228aa5bcfd8d5d8d7d48d6c226ff9068d05c" },
     { "path": "dist/Nimvara-0.7.0-dev.msix", "bytes": 4886974, "sha256": "9c2b54832a6f39ca92d5301469bb13a9d8d5634f2f9d2ad9b50ef889ef1939cf" },
     { "path": "dist/Nimvara_0.7.0_amd64.deb", "bytes": 5688952, "sha256": "1c23e563bdf20116613816d77059301ca1fbf5f8993fa1a5986fe6f91dab0ee1" },
     { "path": "dist/nimvara.cdx.json", "bytes": 168371, "sha256": "82666a1778573105a35a8a726868f73f9cbe4c68f2f31203acb539a7a73bb352" }

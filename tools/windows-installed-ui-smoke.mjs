@@ -6,6 +6,7 @@ import path from "node:path";
 
 const exe = process.argv[2];
 const sourceVault = process.argv[3];
+const screenshotPrefix = process.argv[4];
 if (!exe || !sourceVault) throw new Error("Usage: node windows-installed-ui-smoke.mjs <Nimvara.exe> <read-only-source-vault>");
 
 const root = await mkdtemp(path.join(os.tmpdir(), "nimvara-installed-smoke-"));
@@ -135,6 +136,14 @@ try {
   await waitFor(`!document.querySelector("#shell").classList.contains("hidden")`, "workspace shell");
   report.checks.workspaceOpen = await evaluate(`document.querySelectorAll("#files button").length >= 1`);
   report.checks.fileTree = await evaluate(`document.querySelectorAll("#files details").length > 0`);
+  report.checks.quietShell = await evaluate(`document.querySelector("#toggleTools").getAttribute("aria-expanded")==="false" && getComputedStyle(document.querySelector(".inspector")).display==="none" && document.querySelector("#content").getBoundingClientRect().height>300`);
+  await evaluate(`document.querySelector("#toggleTools").click()`);
+  report.checks.toolsReachable = await evaluate(`document.querySelector("#toggleTools").getAttribute("aria-expanded")==="true" && !document.querySelector(".inspector").inert && document.activeElement.id==="toolCategory"`);
+  await evaluate(`document.querySelector("#toolCategory").value="organize";document.querySelector("#toolCategory").dispatchEvent(new Event("change"))`);
+  report.checks.toolGrouping = await evaluate(`!document.querySelector("#propertyQuery").closest(".tool-group-hidden") && Boolean(document.querySelector("#aiMode").closest(".tool-group-hidden"))`);
+  await evaluate(`document.querySelector("#toolCategory").dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true})); document.querySelector("#toggleFocus").click()`);
+  report.checks.focusMode = await evaluate(`getComputedStyle(document.querySelector(".sidebar")).display==="none" && document.querySelector("#toggleFocus").getAttribute("aria-pressed")==="true"`);
+  await evaluate(`document.querySelector("#toggleFocus").click()`);
   report.checks.accessibility = await evaluate(`(() => {
     const controls=[...document.querySelectorAll("input,textarea,button")];
     const unnamed=controls.filter(el => !Boolean(el.getAttribute("aria-label") || (el.id && document.querySelector('label[for="'+el.id+'"]')) || el.closest("label") || (el.tagName==="BUTTON" && el.textContent.trim())));
@@ -149,12 +158,44 @@ try {
   await evaluate(`document.querySelector("#approveTaskChange").click()`);
   await waitFor(`document.querySelector("#footerStatus").textContent.includes("Task change checkpointed")`, "task checkpoint save");
   report.checks.taskDashboard = (await readFile(productivityPath, "utf8")).includes("- [x] Complete safely");
+  await evaluate(`document.querySelector("#closeTasks").click()`);
 
   await evaluate(`document.querySelector('[data-path="${encodeURIComponent("Nimvara Productivity Smoke.md")}"]').click()`);
   await waitFor(`document.querySelector("#notePath").textContent==="Nimvara Productivity Smoke.md"`, "productivity note");
   await evaluate(`document.querySelector("#previewView").click()`);
   await waitFor(`!document.querySelector("#markdownPreview").classList.contains("hidden")`, "Markdown preview");
+  report.checks.themeContrast = true;
+  for (const theme of ["dark", "light", "high-contrast"]) {
+    await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+    const contrastPass = await evaluate(`(() => {
+      const rgb = s => s.match(/[\\d.]+/g).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});
+      const lum = s => {const c=rgb(s);return c[0]*.2126+c[1]*.7152+c[2]*.0722};
+      return ['.sidebar','.callout-warning','.math-inline'].every(selector=>{
+        const el=document.querySelector(selector);let parent=el;let bg;
+        while(parent){bg=getComputedStyle(parent).backgroundColor;if(bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')break;parent=parent.parentElement;}
+        const a=lum(getComputedStyle(el).color),b=lum(bg);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5;
+      });
+    })()`);
+    report.checks.themeContrast &&= contrastPass;
+  }
+  await evaluate(`document.documentElement.dataset.theme="dark"`);
+  await cdp("Emulation.setDeviceMetricsOverride", { width: 900, height: 700, deviceScaleFactor: 1, mobile: false });
+  await evaluate(`document.querySelector("#toggleTools").click()`);
+  report.checks.narrowToolsReachable = await evaluate(`getComputedStyle(document.querySelector(".inspector")).display!=="none" && document.querySelector(".inspector").getBoundingClientRect().right<=innerWidth && document.querySelector(".editor").getBoundingClientRect().width>=300`);
+  await evaluate(`document.querySelector("#toggleTools").click()`);
+  await cdp("Emulation.clearDeviceMetricsOverride");
+  if (screenshotPrefix) {
+    for (const theme of ["dark", "light"]) {
+      await evaluate(`document.documentElement.dataset.theme=${JSON.stringify(theme)}`);
+      await sleep(100);
+      const capture = await cdp("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+      await writeFile(`${screenshotPrefix}-${theme}.png`, Buffer.from(capture.data, "base64"));
+    }
+    await evaluate(`document.documentElement.dataset.theme="dark"`);
+  }
   report.checks.safePreview = await evaluate(`document.querySelector("#markdownPreview .callout-warning") && document.querySelector("#markdownPreview table") && document.querySelector("#markdownPreview .math-inline") && document.querySelector("#markdownPreview .mermaid-diagram") && !document.querySelector("#markdownPreview script") && document.querySelector("#markdownPreview").textContent.includes("alert('never')")`);
+  const sourceTaskLine = (await readFile(productivityPath, "utf8")).split(/\r?\n/).findIndex(line => line.includes("- [x] Complete safely")) + 1;
+  report.checks.previewTaskLine = await evaluate(`Number(document.querySelector("#markdownPreview [data-preview-task-line]").dataset.previewTaskLine) === ${sourceTaskLine}`);
   await evaluate(`document.querySelector("#markdownPreview [data-preview-embed]").click()`);
   await waitFor(`document.querySelector("#markdownPreview .transclusion")`, "read-only transclusion");
   report.checks.transclusion = await evaluate(`document.querySelector("#markdownPreview .transclusion").textContent.includes("Read-only transclusion works") && !document.querySelector("#markdownPreview .transclusion").textContent.includes("Excluded")`);

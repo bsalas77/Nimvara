@@ -3,6 +3,7 @@ import { createDailyNote, dailyNotePath, filterRecords, parseFrontmatter, propos
 import { buildFileTree, extractTransclusion, normalizeSettings, parseMermaidFlowchart, renderMarkdownPreview, sanitizeDiagnostics } from "./workspace-ui.js";
 
 import { createPreferenceStore, readPreferenceJson, readStringList, readKanbanViews } from "./preferences.js";
+import { mountWorkspaceShell } from "./workspace-shell.js";
 
 const localStorage = createPreferenceStore(() => window.localStorage, () => {
   const warning = document.createElement("p");
@@ -131,7 +132,7 @@ async function openWorkspace(create) {
   try {
     const data = await api("/api/workspace", { method: "POST", body: JSON.stringify({ path: $("workspacePath").value, create }) });
     workspace = data.workspace; files = data.files; localStorage.setItem("nimvara-workspace", workspace);
-    $("welcome").classList.add("hidden"); $("shell").classList.remove("hidden"); $("currentWorkspace").textContent = workspace; renderFiles(); refreshTemplatePicker(); await loadBackupSchedule();
+    $("welcome").classList.add("hidden"); $("shell").classList.remove("hidden"); $("currentWorkspace").textContent = workspace.replaceAll("\\", "/").split("/").filter(Boolean).at(-1) || workspace; $("currentWorkspace").title = workspace; renderFiles(); refreshTemplatePicker(); await loadBackupSchedule();
     $("indexState").textContent = "Indexingâ€¦";
     await refreshWorkspaceFiles(); startWorkspaceEvents(); const remembered = openTabs.find((item) => files.includes(item)); if (remembered) await openNote(remembered); else if (files[0]) await openNote(files[0]); status(`Workspace open: ${workspace}`);
   } catch (reason) { error(reason); }
@@ -318,6 +319,7 @@ window.onbeforeunload = (event) => { if (dirty) { event.preventDefault(); event.
 document.addEventListener("dblclick", (event) => { const button = event.target.closest?.("[data-attachment]"); if (button) previewAttachment(decodeURIComponent(button.dataset.attachment)); });
 async function previewAttachment(path) { try { const preview = await api(`/api/attachment/preview?path=${encodeURIComponent(path)}`); const modal = document.createElement("dialog"); modal.className = "attachment-preview"; const title = document.createElement("h3"); title.textContent = path; const close = document.createElement("button"); close.textContent = "Close"; close.onclick = () => modal.remove(); modal.append(title); if (preview.mime === "application/pdf") { const frame = document.createElement("iframe"); frame.src = `data:${preview.mime};base64,${preview.data}`; frame.title = path; modal.append(frame); } else if (preview.mime.startsWith("image/")) { const image = document.createElement("img"); image.src = `data:${preview.mime};base64,${preview.data}`; image.alt = path; modal.append(image); } else { const audio = document.createElement("audio"); audio.controls = true; audio.src = `data:${preview.mime};base64,${preview.data}`; modal.append(audio); } modal.append(close); document.body.append(modal); modal.showModal(); } catch (reason) { error(reason); } }
 api("/api/status").then((state) => { if (!$("workspacePath").value) $("workspacePath").value = state.sampleWorkspace; $("versionBadge").textContent = state.version; const local = state.ingestion.local; $("ingestionCapability").textContent = `HTML/TXT/Markdown extraction available. PDF/DOCX: ${local[".pdf"].extraction}; originals preserved.`; }).catch(error);
+mountWorkspaceShell();
 setInterval(checkExternal, 15000);
 setInterval(async () => {
   if (!workspace) return;
