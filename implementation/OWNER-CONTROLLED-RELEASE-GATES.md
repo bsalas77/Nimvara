@@ -15,7 +15,9 @@ Engineering cannot truthfully complete these gates without the owner's identity,
    paid direct-download alternative; Microsoft Store signing remains the
    no-certificate-cost Store alternative.
 7. Provide verified public HTTPS privacy, support, security, and product URLs.
-8. Configure the GitHub repository, protected branches, release environment, secret scanning, and signing secrets.
+8. Configure the GitHub repository, protected branches, release environment, and
+   SignPath signing secret/variables. Secret scanning, push protection, and private
+   vulnerability reporting were enabled on the public repository on 2026-09-06.
 9. Commission an independent security assessment.
 10. Recruit consented migration and accessibility-test participants.
 11. Enroll in the Apple Developer Program and provide macOS/iPad signing access.

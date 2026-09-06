@@ -9,6 +9,9 @@ Before requesting help:
 3. reproduce with a synthetic workspace where possible;
 4. remove note content, credentials, personal data, and private paths from screenshots and logs.
 
-Use the repository's issue tracker for non-sensitive defects after the public repository exists. Use GitHub Security Advisories for suspected vulnerabilities. The final release listing must replace these repository-relative instructions with verified public support and privacy URLs.
+Use the [repository issue tracker](https://github.com/bsalas77/Nimvara/issues)
+for non-sensitive defects. Use the private GitHub vulnerability-reporting channel
+for suspected vulnerabilities. The final release listing must add a dedicated
+support site if support moves beyond GitHub.
 
 Nimvara is not an emergency, medical, legal, financial, or credential-recovery service.
