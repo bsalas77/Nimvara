@@ -20,6 +20,11 @@ This record covers only the locally built unsigned development candidate
   expected source path, `/S`, and the expected per-user target. They were closed
   after inspection. No workspace, backup, settings, or user vault file was read,
   changed, moved, or deleted.
+- After the user added the exact installer and installed-app paths as Avast
+  exceptions, a second silent upgrade attempt again did not return an exit result
+  or replace the installed executable. A fourth setup process remained held.
+  Windows reported all four setup processes present after targeted force-termination
+  attempts, which is consistent with security-product virtualization/protection.
 
 ## Conclusion
 
@@ -32,7 +37,8 @@ evidence that the installer completed or that the new app is defective.
 ## Safe next qualification
 
 Use a non-sandboxed, ordinary Windows test account or a Windows VM with the
-installer's executable path explicitly permitted by the active security product.
+installer's executable path explicitly permitted in Avast **General > Exceptions**
+(not only the Blocked & Allowed apps screen) and no active AutoSandbox hold.
 Then run `node tools/windows-installed-ui-smoke.mjs` against the installed
 `Nimvara.exe` and perform the disposable upgrade/uninstall retention drill. Do
 not remove broad antivirus protection or add a broad folder exclusion for a
