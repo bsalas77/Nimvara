@@ -8,6 +8,11 @@ it for managed signing only after a protected
 
 No signing secret is committed.
 
+The public `bsalas77/Nimvara` repository has a `signing` GitHub environment,
+created on 2026-09-06, with `bsalas77` as its required reviewer. A workflow
+cannot enter the managed-signing submission step until that reviewer approves
+the environment deployment.
+
 ## SignPath Foundation route
 
 For a qualifying fully-FOSS public project, configure these repository values after
