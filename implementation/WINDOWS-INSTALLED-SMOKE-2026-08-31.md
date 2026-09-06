@@ -47,6 +47,24 @@ to investigate, not a successful installed workflow qualification. The harness
 now has a one-second timeout on every local debugging probe so this condition
 fails promptly rather than hanging the release check.
 
+## Root cause confirmed — 2026-09-06
+
+The local Avast AutoSandbox log confirms the installed executable was sandboxed
+on every failed smoke attempt, while the source-built executable was explicitly
+recorded as not sandboxed. The installed process therefore never initialized its
+native window or WebView2 debugging target. This is an antivirus reputation/
+unsigned-code condition, not evidence of a Nimvara window lifecycle defect.
+
+For this local development qualification only, the owner may add one narrow,
+temporary Avast exception for the exact installed executable:
+
+`C:\\Users\\Kogu\\AppData\\Local\\Programs\\Nimvara\\Nimvara.exe`
+
+Do not exclude the enclosing Programs directory, the project directory, a drive,
+or disable shields. The exception must be removed after the smoke test. A public
+release must instead be Authenticode-signed and timestamped so it does not rely
+on an antivirus exception.
+
 Direct Win32 enumeration found two visible Nimvara-owned top-level windows, both
 blank-titled and approximately 50×50 at the same off-screen edge. This indicates a
 native window lifecycle/state problem rather than a missing WebView2 runtime.

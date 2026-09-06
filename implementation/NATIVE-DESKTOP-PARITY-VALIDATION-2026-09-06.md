@@ -74,6 +74,11 @@ The current candidate additionally contains the desktop extension-control guard:
 `dist/Nimvara-Setup-0.7.0-dev-desktop-safety.exe` (5,260,044 bytes), SHA-256
 `e063f7ceccdd2f073c31b2e09067c99ee40754627c8a35d94678199640d2907c`.
 
+The installed Windows smoke gate is presently blocked by confirmed Avast
+AutoSandbox of the installed, unsigned executable—not by a Nimvara startup code
+failure. See `WINDOWS-INSTALLED-SMOKE-2026-08-31.md` for the narrowly scoped local
+test exception and the production signing requirement.
+
 ## Still deliberately open
 
 - Extension management remains service-only. Its development controls are
