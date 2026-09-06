@@ -59,6 +59,66 @@ function cleanText(value) {
     .trim();
 }
 
+const SUPPRESSED_HTML_TAGS = new Set(["script", "style", "noscript", "iframe", "object", "embed", "svg", "math", "form", "input", "button", "textarea", "select", "template"]);
+const BLOCK_HTML_TAGS = new Set(["p", "div", "section", "article", "main", "header", "footer", "nav", "aside", "blockquote", "pre"]);
+
+function htmlTagName(token) {
+  let offset = 0;
+  while (/\s/.test(token[offset] ?? "")) offset += 1;
+  const closing = token[offset] === "/";
+  if (closing) offset += 1;
+  while (/\s/.test(token[offset] ?? "")) offset += 1;
+  const start = offset;
+  while (/[A-Za-z0-9:-]/.test(token[offset] ?? "")) offset += 1;
+  return { closing, name: token.slice(start, offset).toLowerCase() };
+}
+
+function htmlToSafeMarkdown(html) {
+  let output = "";
+  let offset = 0;
+  let suppressed = null;
+  while (offset < html.length) {
+    if (html.startsWith("<!--", offset)) {
+      const end = html.indexOf("-->", offset + 4);
+      offset = end === -1 ? html.length : end + 3;
+      continue;
+    }
+    if (html[offset] !== "<") {
+      if (!suppressed) output += html[offset];
+      offset += 1;
+      continue;
+    }
+    const end = html.indexOf(">", offset + 1);
+    if (end === -1) {
+      if (!suppressed) output += html.slice(offset);
+      break;
+    }
+    const { closing, name } = htmlTagName(html.slice(offset + 1, end));
+    offset = end + 1;
+    if (!name) continue;
+    if (suppressed) {
+      if (closing && name === suppressed) suppressed = null;
+      continue;
+    }
+    if (SUPPRESSED_HTML_TAGS.has(name)) {
+      if (!closing) suppressed = name;
+      continue;
+    }
+    if (name === "br") { output += "\n"; continue; }
+    if (name === "li" && !closing) { output += "\n- "; continue; }
+    if (/^h[1-6]$/.test(name)) {
+      output += closing ? "\n" : `\n${"#".repeat(Number(name[1]))} `;
+      continue;
+    }
+    if (BLOCK_HTML_TAGS.has(name)) output += "\n";
+  }
+  return output;
+}
+
+function escapeHtmlDelimiters(value) {
+  return value.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export function sanitizeHtmlToMarkdown(html, baseUrl = null) {
   if (typeof html !== "string") throw new NimvaraError("INVALID_HTML", "HTML input must be text.");
   const titleMatch = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
@@ -67,24 +127,9 @@ export function sanitizeHtmlToMarkdown(html, baseUrl = null) {
   let canonicalUrl = href ? (href[1] ?? href[2] ?? href[3]) : null;
   try { if (canonicalUrl && baseUrl) canonicalUrl = new URL(canonicalUrl, baseUrl).href; } catch { canonicalUrl = null; }
 
-  let body = html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<(script|style|noscript|iframe|object|embed|svg|math|form|input|button|textarea|select|template)\b[\s\S]*?<\/\1\s*>/gi, "")
-    .replace(/<(script|style|noscript|iframe|object|embed|svg|math|form|input|button|textarea|select|template)\b[^>]*\/?>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\s(?:href|src)\s*=\s*(?:"\s*(?:javascript|data):[^"]*"|'\s*(?:javascript|data):[^']*')/gi, "");
-  body = body
-    .replace(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi, "\n# $1\n")
-    .replace(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi, "\n## $1\n")
-    .replace(/<h3\b[^>]*>([\s\S]*?)<\/h3>/gi, "\n### $1\n")
-    .replace(/<h[4-6]\b[^>]*>([\s\S]*?)<\/h[4-6]>/gi, "\n#### $1\n")
-    .replace(/<li\b[^>]*>([\s\S]*?)<\/li>/gi, "\n- $1")
-    .replace(/<(p|div|section|article|main|header|footer|nav|aside|blockquote|pre)\b[^>]*>/gi, "\n")
-    .replace(/<\/(p|div|section|article|main|header|footer|nav|aside|blockquote|pre)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, "");
-  const title = cleanText((titleMatch?.[1] ?? "").replace(/<[^>]+>/g, "")) || "Captured page";
-  return { title, markdown: cleanText(body), canonicalUrl };
+  const body = htmlToSafeMarkdown(html);
+  const title = escapeHtmlDelimiters(cleanText(htmlToSafeMarkdown(titleMatch?.[1] ?? ""))) || "Captured page";
+  return { title, markdown: escapeHtmlDelimiters(cleanText(body)), canonicalUrl };
 }
 
 function ipv4Blocked(address) {

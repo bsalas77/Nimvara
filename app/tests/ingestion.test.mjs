@@ -44,6 +44,13 @@ test("HTML sanitizer discards active content, handlers, forms, and javascript UR
   assert.doesNotMatch(result.markdown, /alert|steal|secret|javascript|onload|<script/i);
 });
 
+test("HTML sanitizer renders encoded and malformed tag-like text inert", () => {
+  const result = sanitizeHtmlToMarkdown("<p>Visible &lt;script&gt; text</p><script>hidden()</script><script");
+  assert.match(result.markdown, /Visible &lt;script&gt; text/);
+  assert.doesNotMatch(result.markdown, /hidden\(\)/);
+  assert.doesNotMatch(result.markdown, /<script/i);
+});
+
 test("URL preview is read-only, records canonical provenance, and commits searchable Markdown", async (t) => {
   const f = await fixture(); t.after(() => rm(f.root, { recursive: true, force: true }));
   const fetcher = async () => ({
