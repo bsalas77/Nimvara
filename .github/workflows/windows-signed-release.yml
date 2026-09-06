@@ -13,6 +13,8 @@ permissions:
   contents: read
   actions: read
   id-token: write
+  attestations: write
+  artifact-metadata: write
 
 jobs:
   build-and-sign:
@@ -59,6 +61,10 @@ jobs:
             dist/nimvara-windows-unsigned.sha256
           archive: false
           if-no-files-found: error
+      - name: Attest unsigned build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: ${{ steps.unsigned.outputs.path }}
       - name: Submit to managed signing service
         if: ${{ inputs.submit_for_signing }}
         uses: signpath/github-action-submit-signing-request@v2

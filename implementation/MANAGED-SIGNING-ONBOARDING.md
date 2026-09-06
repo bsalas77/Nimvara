@@ -2,7 +2,8 @@
 
 The repository contains `.github/workflows/windows-signed-release.yml`. It builds
 and verifies the canonical NSIS artifact on a GitHub-hosted Windows runner, uploads
-that exact artifact, and submits it for managed signing only after a protected
+that exact artifact, generates a GitHub build-provenance attestation, and submits
+it for managed signing only after a protected
 `signing` environment approval and an explicit manual dispatch choice.
 
 No signing secret is committed.
