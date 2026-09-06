@@ -72,11 +72,10 @@ jobs:
           cargo +1.97.1 fmt --check
           cargo +1.97.1 test --locked
           cargo +1.97.1 clippy --locked --all-targets -- -D warnings
-      - name: Build development installer and MSIX
+      - name: Build canonical per-user NSIS installer
         shell: powershell
         run: |
-          .\packaging\windows\build-installer.ps1
-          .\packaging\windows\build-msix.ps1
+          .\packaging\windows\build-nsis.ps1
       - name: Generate SBOM
         run: node tools/generate-sbom.mjs
       - name: Verify SBOM structure and provenance
@@ -84,14 +83,12 @@ jobs:
       - name: Generate Windows artifact checksums
         shell: powershell
         run: |
-          Get-FileHash dist\Nimvara-Setup-0.7.0-dev.exe -Algorithm SHA256 | Format-List | Out-File dist\nimvara-windows.sha256
-          Get-FileHash dist\Nimvara-0.7.0-dev.msix -Algorithm SHA256 | Format-List | Out-File -Append dist\nimvara-windows.sha256
+          Get-FileHash dist\Nimvara-Setup-*-dev.exe -Algorithm SHA256 | Format-List | Out-File dist\nimvara-windows.sha256
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nimvara-windows-unsigned
           path: |
-            dist/Nimvara-Setup-0.7.0-dev.exe
-            dist/Nimvara-0.7.0-dev.msix
+            dist/Nimvara-Setup-*-dev.exe
             dist/nimvara.cdx.json
             dist/nimvara-windows.sha256
           if-no-files-found: error

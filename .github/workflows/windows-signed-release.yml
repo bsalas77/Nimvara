@@ -1,0 +1,92 @@
+name: Windows signed release
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_for_signing:
+        description: Submit the verified artifact to the configured managed signing service
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+jobs:
+  build-and-sign:
+    runs-on: windows-2025
+    environment: signing
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Run JavaScript qualification
+        working-directory: app
+        run: node tests/run-all.mjs
+      - name: Select pinned Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal --component clippy,rustfmt
+      - name: Run native qualification
+        working-directory: app/src-tauri
+        run: |
+          cargo +1.97.1 fmt --check
+          cargo +1.97.1 test --locked
+          cargo +1.97.1 clippy --locked --all-targets -- -D warnings
+      - name: Build canonical NSIS installer
+        shell: powershell
+        run: .\packaging\windows\build-nsis.ps1
+      - name: Generate and verify SBOM
+        shell: powershell
+        run: |
+          node tools/generate-sbom.mjs
+          node tools/verify-sbom.mjs
+      - name: Verify installer checksum and authenticode precondition
+        id: unsigned
+        shell: powershell
+        run: |
+          $installer = Get-ChildItem 'dist\Nimvara-Setup-*-dev.exe' | Select-Object -First 1
+          if (-not $installer) { throw 'Canonical installer was not produced.' }
+          if ((Get-AuthenticodeSignature -LiteralPath $installer.FullName).Status -ne 'NotSigned') { throw 'Unsigned build stage unexpectedly received a signature.' }
+          Get-FileHash -Algorithm SHA256 -LiteralPath $installer.FullName | Format-List | Out-File 'dist\nimvara-windows-unsigned.sha256'
+          "path=$($installer.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      - name: Upload immutable unsigned candidate
+        id: upload-unsigned
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nimvara-windows-unsigned-${{ github.run_id }}
+          path: |
+            ${{ steps.unsigned.outputs.path }}
+            dist/nimvara.cdx.json
+            dist/nimvara-windows-unsigned.sha256
+          archive: false
+          if-no-files-found: error
+      - name: Submit to managed signing service
+        if: ${{ inputs.submit_for_signing }}
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist/signed
+          skip-decompress: true
+      - name: Verify signed installer
+        if: ${{ inputs.submit_for_signing }}
+        shell: powershell
+        run: |
+          $signed = Get-ChildItem 'dist\signed\*.exe' | Select-Object -First 1
+          if (-not $signed) { throw 'Signing service returned no installer.' }
+          $signature = Get-AuthenticodeSignature -LiteralPath $signed.FullName
+          if ($signature.Status -ne 'Valid') { throw "Signed installer verification failed: $($signature.Status)" }
+          Get-FileHash -Algorithm SHA256 -LiteralPath $signed.FullName | Format-List | Out-File 'dist\nimvara-windows-signed.sha256'
+      - name: Upload signed release candidate
+        if: ${{ inputs.submit_for_signing }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nimvara-windows-signed-${{ github.run_id }}
+          path: |
+            dist/signed/*.exe
+            dist/nimvara-windows-signed.sha256
+          archive: false
+          if-no-files-found: error

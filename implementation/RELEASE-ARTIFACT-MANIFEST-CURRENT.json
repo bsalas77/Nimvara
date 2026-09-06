@@ -8,6 +8,11 @@
       "path": "dist/Nimvara-Setup-0.7.2-dev.exe",
       "bytes": 5263360,
       "sha256": "45f822019bd08746c4ad4eda5c47023633aa8fb4c87888a739a1a01b7fe22e5f"
+    },
+    {
+      "path": "dist/nimvara.cdx.json",
+      "bytes": 168371,
+      "sha256": "367b549050356740e384d81303d9811c2bade6bfe7bf26dd25105bbb07764e69"
     }
   ]
 }
