@@ -67,6 +67,8 @@ jobs:
           cargo +1.97.1 fmt --check
           cargo +1.97.1 test --locked
           cargo +1.97.1 clippy --locked --all-targets -- -D warnings
+      - name: Install pinned Tauri CLI
+        run: cargo +1.97.1 install tauri-cli --version 2.11.4 --locked
       - name: Build canonical per-user NSIS installer
         shell: powershell
         run: |
