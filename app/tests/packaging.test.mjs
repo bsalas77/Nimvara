@@ -21,3 +21,11 @@ test("Windows package metadata uses explicit development identity", async () => 
   assert.match(config, /"identifier":\s*"com\.nimvara\.desktop"/);
   assert.match(config, /"installMode":\s*"currentUser"/);
 });
+
+test("standard NSIS build entry point uses locked native dependencies and explicit unsigned packaging", async () => {
+  const script = await readFile(path.join(root, "packaging/windows/build-nsis.ps1"), "utf8");
+  assert.match(script, /build --release --locked --offline/);
+  assert.match(script, /tauri bundle --bundles nsis --ci --no-sign/);
+  assert.match(script, /Push-Location \$tauriRoot/);
+  assert.match(script, /Nimvara-Setup-0\.7\.0-dev-nsis\.exe/);
+});

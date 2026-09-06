@@ -126,7 +126,7 @@ await writeFile(productivityPath, "---\ntype: test\nstatus: active\n---\n\n# Pro
 await writeFile(path.join(workspace, "Embedded Smoke.md"), "# Embedded\n\n## Section\n\nRead-only transclusion works.\n\n## Other\n\nExcluded.", "utf8");
 await writeFile(path.join(workspace, "Nimvara Smoke.canvas"), JSON.stringify({ nodes: [{ id: "a", type: "text", text: "Canvas safe", x: 0, y: 0, width: 220, height: 100 }, { id: "b", type: "file", file: "Embedded Smoke.md", x: 320, y: 100, width: 220, height: 100 }], edges: [{ id: "e", fromNode: "a", toNode: "b" }] }), "utf8");
 const marker = `\n\nNimvara recovery smoke ${Date.now()}`;
-const report = { sourceVaultMutated: null, copiedVault: workspace, checks: {} };
+const report = { executableSha256: createHash("sha256").update(await readFile(exe)).digest("hex"), sourceVaultMutated: null, copiedVault: workspace, checks: {} };
 
 try {
   await launch(9331);
@@ -197,6 +197,20 @@ try {
 
   const searchCount = await evaluate(`window.__TAURI__.core.invoke("native_search",{query:"Nimvara recovery smoke"}).then(r=>r.length)`);
   report.checks.search = searchCount >= 1;
+  const importSource = path.join(root, "Capture café 日本語.txt");
+  const importBytes = Buffer.from("Nimvara ingestion smoke searchable original café 日本語\n", "utf8");
+  await writeFile(importSource, importBytes);
+  const beforePreview = await digestTree(workspace);
+  const preview = await evaluate(`window.__TAURI__.core.invoke("native_preview_local",{path:${JSON.stringify(importSource)}})`);
+  report.checks.ingestionPreviewReadOnly = beforePreview === await digestTree(workspace);
+  await evaluate(`window.__TAURI__.core.invoke("native_commit_ingestion",{previewId:${JSON.stringify(preview.id)},destinationFolder:"Imports",noteName:"Capture café 日本語",allowDuplicate:false})`);
+  const importedText = await readFile(path.join(workspace, "Imports", "Capture café 日本語.md"), "utf8");
+  report.checks.ingestionProvenance = importedText.includes(preview.provenance.originalHash) && importedText.includes("Source provenance") && (await readFile(importSource)).equals(importBytes);
+  report.checks.ingestionSearch = await evaluate(`window.__TAURI__.core.invoke("native_search",{query:"Nimvara ingestion smoke"}).then(r=>r.length>0)`);
+  const duplicate = await evaluate(`window.__TAURI__.core.invoke("native_preview_local",{path:${JSON.stringify(importSource)}})`);
+  report.checks.ingestionDuplicate = Boolean(duplicate.duplicate) && await evaluate(`window.__TAURI__.core.invoke("native_commit_ingestion",{previewId:${JSON.stringify(duplicate.id)},destinationFolder:"Imports",noteName:"Duplicate",allowDuplicate:false}).then(()=>false,e=>String(e).includes("DUPLICATE_FOUND"))`);
+  await evaluate(`window.__TAURI__.core.invoke("native_cancel_ingestion",{previewId:${JSON.stringify(duplicate.id)}})`);
+  report.checks.ingestionCancel = await evaluate(`window.__TAURI__.core.invoke("native_commit_ingestion",{previewId:${JSON.stringify(duplicate.id)},destinationFolder:"Imports",noteName:"Cancelled",allowDuplicate:false}).then(()=>false,e=>String(e).includes("PREVIEW_NOT_FOUND"))`);
   const snapshot = await evaluate(`window.__TAURI__.core.invoke("native_create_snapshot",{destination:${JSON.stringify(backups)}})`);
   const restored = await evaluate(`window.__TAURI__.core.invoke("native_restore_snapshot",{snapshotPath:${JSON.stringify(snapshot.path)},destination:${JSON.stringify(restore)}})`);
   report.checks.backupRestore = restored.verified && (await digestTree(workspace)) === (await digestTree(restore));
@@ -207,7 +221,8 @@ try {
   report.checks.externalConflict = conflict && (await readFile(noteFullPath, "utf8")).includes("external OneDrive-style change");
   await stop();
   report.sourceVaultMutated = sourceBefore !== await digestTree(sourceVault);
-  report.passed = !report.sourceVaultMutated && Object.values(report.checks).every(Boolean);
+  report.browserErrors = browserErrors;
+  report.passed = !report.sourceVaultMutated && browserErrors.length === 0 && Object.values(report.checks).every(Boolean);
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (!report.passed) process.exitCode = 1;
 } finally {

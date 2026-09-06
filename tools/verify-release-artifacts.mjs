@@ -3,9 +3,10 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const manifest = JSON.parse(readFileSync(resolve(root, "implementation/RELEASE-ARTIFACT-MANIFEST-2026-08-31.json"), "utf8"));
+const manifest = JSON.parse(readFileSync(resolve(root, "implementation/RELEASE-ARTIFACT-MANIFEST-2026-09-05.json"), "utf8"));
 const expectedPaths = new Set([
   "dist/Nimvara-Setup-0.7.0-dev.exe",
+  "dist/Nimvara-Setup-0.7.0-dev-nsis.exe",
   "dist/Nimvara-0.7.0-dev.msix",
   "dist/Nimvara_0.7.0_amd64.deb",
   "dist/nimvara.cdx.json"

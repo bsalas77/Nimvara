@@ -25,4 +25,5 @@ cp -R -- "$project/sample-workspace" "$resources/app/"
 cargo fmt --check --manifest-path "$tauri_root/Cargo.toml"
 cargo test --locked --manifest-path "$tauri_root/Cargo.toml"
 cargo clippy --locked --manifest-path "$tauri_root/Cargo.toml" --all-targets -- -D warnings
+cd "$tauri_root"
 cargo tauri build --config "$tauri_root/tauri.linux.conf.json" --bundles "$bundle"
