@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-09-06",
+  "releaseCandidate": "0.7.1-dev",
+  "note": "This is the current Windows installer candidate only. It is unsigned and its ordinary per-user installation remains unqualified because Avast AutoSandbox keeps the setup process from completing on this host. Historical manifests remain dated evidence, not substitutes for this candidate.",
+  "artifacts": [
+    {
+      "path": "dist/Nimvara-Setup-0.7.1-dev.exe",
+      "bytes": 5259856,
+      "sha256": "d3094067fac9dae5f64440373abc478fb01cfb3af408795c5632b4521c6f2708"
+    }
+  ]
+}
