@@ -18,6 +18,7 @@ try {
 } finally { Pop-Location }
 $candidate = Join-Path $tauriRoot "target\release\bundle\nsis\Nimvara_$($version)_x64-setup.exe"
 $destination = Join-Path $project "dist\Nimvara-Setup-$($version)-dev.exe"
+New-Item -ItemType Directory -Path (Join-Path $project 'dist') -Force | Out-Null
 Copy-Item -LiteralPath $candidate -Destination $destination -Force
 # Keep the root-level convenience link used by the project README in sync with
 # the same canonical NSIS artifact. A release process signs this file in place.
