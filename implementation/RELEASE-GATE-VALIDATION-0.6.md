@@ -7,7 +7,7 @@ SHA-256: `978a6492c25d8ff9354d725cc8d5d30fdcf55119b5acc6356da489088899c1bb`
 
 ## Copied-vault and OneDrive evidence
 
-The source was `C:\Users\Kogu\OneDrive\Documents\Obsidian Vault`, inspected strictly read-only. It contained 45 Markdown notes and 55 total files. All 55 files reported a reparse-point attribute, so the copy exercised reading OneDrive-managed files. No source file was created, edited, renamed, moved, or deleted.
+The source was a personal OneDrive-managed Obsidian vault, inspected strictly read-only. It contained 45 Markdown notes and 55 total files. All 55 files reported a reparse-point attribute, so the copy exercised reading OneDrive-managed files. No source file was created, edited, renamed, moved, or deleted.
 
 The installed-app harness copied the vault to a random `%TEMP%` directory, hashed the source before and after, ran all mutation tests on the disposable copy, and deleted the temporary workspace, backup, and restore trees afterward.
 

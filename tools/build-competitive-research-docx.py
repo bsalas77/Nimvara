@@ -9,7 +9,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-ROOT = Path(r"E:\Obisian Project\Lantern-Project")
+ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "implementation" / "competitive-research-2026-08-28" / "report-source.md"
 OUTPUT = ROOT / "dist" / "Nimvara-Competitive-Complaints-and-Backlog-2026-08-28.docx"
 

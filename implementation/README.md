@@ -50,7 +50,7 @@ before atomic activation. See `AI-PROVIDER-FOUNDATION.md`,
 Run:
 
 ```text
-E:\Obisian Project\Lantern-Project\Nimvara-Setup.exe
+<project-root>\Nimvara-Setup.exe
 ```
 
 Choose whether to create the optional desktop shortcut. Launch Nimvara from the Start Menu. No terminal, separate Node installation, or manual localhost navigation is required.
@@ -62,14 +62,14 @@ This is an unsigned development installer; SmartScreen warnings are expected. Se
 From PowerShell:
 
 ```powershell
-cd 'E:\Obisian Project\Lantern-Project\app'
+cd <project-root>\app
 node server\index.mjs
 ```
 
 Open `http://127.0.0.1:4317` in a browser. The first-run field defaults to:
 
 ```text
-E:\Obisian Project\Lantern-Project\sample-workspace
+<project-root>\sample-workspace
 ```
 
 Stop with `Ctrl+C`.
@@ -79,7 +79,7 @@ No npm installation is required for either the installed zero-dependency client 
 ## Run tests
 
 ```powershell
-cd 'E:\Obisian Project\Lantern-Project\app'
+cd <project-root>\app
 node tests\run-all.mjs
 ```
 
@@ -92,9 +92,9 @@ npm.cmd test
 ## Native engineering validation
 
 ```powershell
-cd 'E:\Obisian Project\Lantern-Project\app'
-C:\Users\Kogu\.cargo\bin\cargo.exe test --manifest-path src-tauri\Cargo.toml
-C:\Users\Kogu\.cargo\bin\cargo.exe clippy --manifest-path src-tauri\Cargo.toml --all-targets -- -D warnings
+cd <project-root>\app
+cargo test --manifest-path src-tauri\Cargo.toml
+cargo clippy --manifest-path src-tauri\Cargo.toml --all-targets -- -D warnings
 npm.cmd test
 ```
 

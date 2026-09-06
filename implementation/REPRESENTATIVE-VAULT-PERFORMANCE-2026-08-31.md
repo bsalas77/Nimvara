@@ -13,5 +13,5 @@ The result is representative-vault evidence, not a production service-level obje
 Reproduce from the repository root:
 
 ```text
-node tools/benchmark-representative-vault.mjs "C:\Users\Kogu\OneDrive\Documents\Obsidian Vault"
+node tools/benchmark-representative-vault.mjs "<read-only representative vault path>"
 ```

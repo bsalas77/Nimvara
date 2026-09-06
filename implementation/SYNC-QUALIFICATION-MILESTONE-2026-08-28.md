@@ -37,7 +37,7 @@ This is a qualification harness, not evidence that a real provider is production
 ## Host qualification record — 2026-08-28
 
 - Disposable two-device folder run: **5 scenarios passed, 0 failed**.
-- OneDrive root detected at `C:\Users\Kogu\OneDrive`, but the OneDrive client process was not running. The real cloud-provider matrix therefore remains unexecuted.
+- A local OneDrive root was detected, but the OneDrive client process was not running. The real cloud-provider matrix therefore remains unexecuted.
 - Docker is installed but its service was stopped; no container was required for this host-level contract.
 - VirtualBox is installed and its service is running. The `Ububtu1` guest was session-locked and was not forcibly manipulated. No VM run was required for the deterministic sync contract.
 - The authorized Obsidian vault was not opened or modified during this qualification.
@@ -45,7 +45,7 @@ This is a qualification harness, not evidence that a real provider is production
 ## Follow-up host check — 2026-08-28
 
 - OneDrive client process detected at `C:\Program Files\Microsoft OneDrive\OneDrive.exe`.
-- A disposable folder and sentinel file were created under `C:\Users\Kogu\OneDrive\Nimvara-Sync-Qualification-2026-08-28` and then removed after inspection. The local file was present with normal archive attributes.
+- A disposable folder and sentinel file were created under the local OneDrive root and then removed after inspection. The local file was present with normal archive attributes.
 - This host exposed no reliable second-device/cloud acknowledgement signal for that sentinel, so this is **not** a real two-device sync pass.
 - Docker Desktop client is installed, but the Linux engine pipe returned `permission denied`; no container result is claimed.
 - VirtualBox has active headless guests, but the requested Ubuntu guest remains session-locked; it was not forcibly interrupted.

@@ -34,7 +34,7 @@ SHA-256: `e45294c4a1d88625397620c73f86228aa5bcfd8d5d8d7d48d6c226ff9068d05c`.
 Older candidates were preserved. No installed-copy replacement is claimed.
 
 In Avast: Menu > Settings > General > Exceptions > Add exception. Select only
-`E:\Obisian Project\Lantern-Project\dist\Nimvara-Setup-0.7.0-dev-polished.exe`.
+the dated polished development installer in the project's `dist` folder.
 Do not exclude the project directory or a drive, and do not disable shields.
 Remove the temporary exception after installer testing. A filename/path exception
 is not inherently hash-pinned; verify the checksum if the file changes.

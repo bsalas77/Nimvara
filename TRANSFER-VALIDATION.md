@@ -3,8 +3,8 @@
 ## Transfer record
 
 - Transfer date: 2026-07-26
-- Permanent working folder: `E:\Obisian Project\Lantern-Project`
-- Source package: `C:\Users\Kogu\Documents\Codex\2026-07-26\i\outputs\Lantern-Project`
+- Permanent working folder: the authorized local project workspace.
+- Source package: the authorized local Codex transfer package.
 - Package transferred: 7 Markdown files
 - Transfer status: Complete
 - Application development status: Not started
