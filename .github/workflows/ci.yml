@@ -45,6 +45,8 @@ jobs:
         run: |
           cargo install cargo-audit --locked
           .\tools\audit-rust.ps1
+      - name: Install pinned Tauri CLI
+        run: cargo install tauri-cli --version 2.11.4 --locked
       - name: Build installer
         shell: powershell
         run: .\packaging\windows\build-nsis.ps1
