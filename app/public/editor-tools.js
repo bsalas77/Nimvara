@@ -6,5 +6,12 @@ export function transformSelection(value, start, end, action) {
   if (action === "link") return { value: source.slice(0, from) + `[${selected || "text"}](url)` + source.slice(to), start: from + 1, end: from + (selected || "text").length + 1 };
   if (action === "heading") return { value: source.slice(0, from) + "# " + source.slice(from), start: from + 2, end: to + 2 };
   if (action === "list") return { value: source.slice(0, from) + "- " + source.slice(from), start: from + 2, end: to + 2 };
+  if (action === "task") return { value: source.slice(0, from) + "- [ ] " + source.slice(from), start: from + 6, end: to + 6 };
+  if (action === "quote") return { value: source.slice(0, from) + "> " + source.slice(from), start: from + 2, end: to + 2 };
+  if (action === "strike") return { value: source.slice(0, from) + `~~${selected || "text"}~~` + source.slice(to), start: from + 2, end: from + (selected || "text").length + 2 };
+  if (action === "table") {
+    const table = "| Column 1 | Column 2 |\n| --- | --- |\n| Value | Value |\n";
+    return { value: source.slice(0, from) + table + source.slice(to), start: from + 2, end: from + 10 };
+  }
   return { value: source, start: from, end: to };
 }

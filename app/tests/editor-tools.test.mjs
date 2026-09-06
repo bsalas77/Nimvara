@@ -8,4 +8,10 @@ test("editor transformations preserve surrounding Markdown and selection", () =>
   assert.equal(result.value.slice(result.start, result.end), "text");
   assert.equal(transformSelection(source, 0, 0, "heading").value, "# Before text after");
   assert.equal(transformSelection(source, 0, 6, "list").value, "- Before text after");
+  assert.equal(transformSelection(source, 7, 11, "strike").value, "Before ~~text~~ after");
+  assert.equal(transformSelection(source, 0, 0, "task").value, "- [ ] Before text after");
+  assert.equal(transformSelection(source, 0, 0, "quote").value, "> Before text after");
+  const table = transformSelection(source, 7, 11, "table");
+  assert.equal(table.value, "Before | Column 1 | Column 2 |\n| --- | --- |\n| Value | Value |\n after");
+  assert.equal(table.value.slice(table.start, table.end), "Column 1");
 });
