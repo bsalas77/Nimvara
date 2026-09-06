@@ -70,6 +70,10 @@ The matching unsigned per-user installer is
 `dist/Nimvara-Setup-0.7.0-dev-migration.exe` (5,259,934 bytes), SHA-256
 `8067a05eb97afbf742c0fa576a7117b2c99be8ce56ff0a40a1344e5cc93025cb`.
 
+The current candidate additionally contains the desktop extension-control guard:
+`dist/Nimvara-Setup-0.7.0-dev-desktop-safety.exe` (5,260,044 bytes), SHA-256
+`e063f7ceccdd2f073c31b2e09067c99ee40754627c8a35d94678199640d2907c`.
+
 ## Still deliberately open
 
 - Extension management remains service-only. Its development controls are
