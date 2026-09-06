@@ -31,6 +31,22 @@ or WebView2/Tauri initialization rather than installer payload extraction. Do no
 mark the packaged UI gate complete until a clean profile or manual desktop check
 confirms the window opens at the configured size.
 
+## Recheck — 2026-09-06
+
+The unsigned current candidate
+`dist/Nimvara-Setup-0.7.0-dev-desktop-safety.exe` was installed per-user over the
+existing copy after the user explicitly authorized stopping Nimvara. The installed
+payload is present at `%LOCALAPPDATA%\\Programs\\Nimvara`, including `Nimvara.exe`,
+`uninstall.exe`, and the Start Menu shortcut. The installed executable SHA-256 is
+`df0cc0f6c1cd0267811e39d89711ac6686ed22ed51c687aa5bb86de8f5cae8e0`.
+
+The installed process launched but never exposed its WebView2 debugging target to
+the automation harness and remained at a minimal process footprint. The test was
+stopped; no workspace was opened or edited. This is an installed-runtime failure
+to investigate, not a successful installed workflow qualification. The harness
+now has a one-second timeout on every local debugging probe so this condition
+fails promptly rather than hanging the release check.
+
 Direct Win32 enumeration found two visible Nimvara-owned top-level windows, both
 blank-titled and approximately 50×50 at the same off-screen edge. This indicates a
 native window lifecycle/state problem rather than a missing WebView2 runtime.

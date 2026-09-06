@@ -55,7 +55,7 @@ async function launch(port) {
   let page;
   for (let attempt = 0; attempt < 50; attempt++) {
     try {
-      const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+      const targets = await (await fetch(`http://127.0.0.1:${port}/json`, { signal: AbortSignal.timeout(1000) })).json();
       page = targets.find((target) => target.type === "page");
       if (page) break;
     } catch {}
