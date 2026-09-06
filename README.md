@@ -2,6 +2,9 @@
 
 Project Nimvara is a pre-release, local-first knowledge application for Windows, macOS, and Linux. It opens ordinary Markdown folders and now includes a development-stage, read-only optional AI adapter with visible source paths. Public production readiness has not yet been established.
 
+Nimvara is licensed under the [Apache License 2.0](LICENSE). The current release
+focus is Windows and Linux; macOS/iPad qualification is intentionally deferred.
+
 The current Windows development build also includes a Markdown-native mind-map view. It
 projects headings, nested lists, and wikilinks into an interactive visual map while keeping
 the note as the authoritative source and performing no implicit file writes.

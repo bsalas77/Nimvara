@@ -3,7 +3,9 @@
 Engineering cannot truthfully complete these gates without the owner's identity, accounts, decisions, or independent participants.
 
 1. Confirm the product name after trademark search and legal review.
-2. Select and approve the source and binary license.
+2. License selected: Apache-2.0, approved by the owner on 2026-09-06. Preserve
+   this license for the public FOSS signing route unless the owner explicitly
+   changes the distribution model.
 3. Decide whether the publisher is an individual or legal organization.
 4. Create and verify the Microsoft Partner Center developer account.
 5. Reserve the Store product identity and provide its package identity and publisher values.
@@ -24,7 +26,7 @@ None of these may be marked complete from local code or simulated evidence.
 
 The local readiness report is **29/39**. The remaining owner-controlled gates are:
 
-- `LICENSE_SELECTED` and `FORMAL_NAME_CLEARANCE`
+- `FORMAL_NAME_CLEARANCE`
 - `NON_DEV_VERSION` and Windows Store publisher identity
 - `MACOS_ARTIFACT`
 - `INDEPENDENT_SECURITY_REVIEW`
