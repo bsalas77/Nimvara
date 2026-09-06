@@ -626,7 +626,7 @@ fn native_status(
     let direct = resource_dir.join("app").join("sample-workspace");
     let sample = if nested.exists() { nested } else { direct };
     Ok(
-        serde_json::json!({ "workspace": workspace, "sampleWorkspace": sample.to_string_lossy(), "version": "0.7.1-dev", "ingestion": native_ingestion::capabilities(), "watchMode": "native-recursive" }),
+        serde_json::json!({ "workspace": workspace, "sampleWorkspace": sample.to_string_lossy(), "version": "0.7.2-dev", "ingestion": native_ingestion::capabilities(), "watchMode": "native-recursive" }),
     )
 }
 
@@ -634,7 +634,7 @@ fn native_status(
 fn native_diagnostics(
     state: tauri::State<'_, native_core::NativeWorkspace>,
 ) -> Result<serde_json::Value, String> {
-    native_core::diagnostics_report(&active_root(&state)?, "0.7.1-dev")
+    native_core::diagnostics_report(&active_root(&state)?, "0.7.2-dev")
 }
 
 #[tauri::command]

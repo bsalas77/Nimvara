@@ -4,7 +4,7 @@ $build = Join-Path $project 'dist\windows-installer'
 $stage = Join-Path $build 'payload'
 $appStage = Join-Path $stage 'app'
 $runtimeStage = Join-Path $stage 'runtime'
-$output = Join-Path $project 'dist\Nimvara-Setup-0.7.1-dev.exe'
+$output = Join-Path $project 'dist\Nimvara-Legacy-Setup-0.7.2-dev.exe'
 $rootInstaller = Join-Path $project 'Nimvara-Setup.exe'
 $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path -LiteralPath $csc)) { throw 'The built-in .NET Framework C# compiler is unavailable.' }
@@ -30,7 +30,7 @@ Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Compression
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'NimvaraSetup.cs') -Destination (Join-Path $build 'NimvaraSetup.cs')
 Push-Location $build
 try {
-  & $csc /nologo /target:winexe /platform:x64 /optimize+ /out:"..\Nimvara-Setup-0.7.1-dev.exe" /reference:System.Windows.Forms.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:Microsoft.CSharp.dll /resource:nimvara-payload.zip,nimvara.payload.zip NimvaraSetup.cs
+  & $csc /nologo /target:winexe /platform:x64 /optimize+ /out:"..\Nimvara-Legacy-Setup-0.7.2-dev.exe" /reference:System.Windows.Forms.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll /reference:Microsoft.CSharp.dll /resource:nimvara-payload.zip,nimvara.payload.zip NimvaraSetup.cs
 } finally {
   Pop-Location
 }

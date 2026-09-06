@@ -17,7 +17,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'NSIS packaging failed.' }
 } finally { Pop-Location }
 $candidate = Join-Path $tauriRoot "target\release\bundle\nsis\Nimvara_$($version)_x64-setup.exe"
-$destination = Join-Path $project "dist\Nimvara-Setup-$($version)-dev-nsis.exe"
+$destination = Join-Path $project "dist\Nimvara-Setup-$($version)-dev.exe"
 Copy-Item -LiteralPath $candidate -Destination $destination -Force
+# Keep the root-level convenience link used by the project README in sync with
+# the same canonical NSIS artifact. A release process signs this file in place.
+Copy-Item -LiteralPath $destination -Destination (Join-Path $project 'Nimvara-Setup.exe') -Force
 Get-Item -LiteralPath $destination | Select-Object FullName,Length,LastWriteTime
 Get-FileHash -LiteralPath $destination -Algorithm SHA256

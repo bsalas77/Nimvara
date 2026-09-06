@@ -1,15 +1,12 @@
 # Windows installer and application-window validation
 
-Primary artifact: `E:\Obisian Project\Lantern-Project\Nimvara-Setup.exe`  
-Versioned copy: `dist\Nimvara-Setup-0.7.0-dev.exe`  
-Version: `0.7.0-dev`  
-Size: 4,724,224 bytes  
-SHA-256: `DF1A4F99AB761B2A9A2191FB7C89773BBE8022020294AFB3B3BC212F6E9CEA93`  
+Primary artifact: `dist\Nimvara-Setup-<version>-dev.exe`
+Version: development candidate
 Architecture: Windows x64 development build
 
 ## Experience and architecture
 
-- Conventional GUI setup executable
+- Conventional Tauri/NSIS setup executable (the only supported Windows release path)
 - Per-user installation under `%LOCALAPPDATA%\Programs\Nimvara`
 - Start Menu entries and optional desktop shortcut
 - Native Tauri 2/WebView2 window
@@ -21,16 +18,24 @@ All application workflows use typed Rust commands. The installer contains `Nimva
 
 ## Upgrade and uninstall
 
-Setup stages a replacement and retains the prior installation for rollback if replacement fails. It does not replace `%LOCALAPPDATA%\Nimvara\UserData`.
+NSIS installs per user and upgrades its application directory. It must never be
+treated as authority to delete a user-selected workspace, backup destination, or
+model directory. Upgrade, rollback, and uninstall-retention behavior remains a
+required installed-package qualification gate.
 
-Uninstall removes application binaries, shortcuts, and registration. It never deletes user-selected workspaces, backup destinations, models, or `%LOCALAPPDATA%\Nimvara\UserData`.
+Uninstall behavior must remove only application-owned files, shortcuts, and
+registration. It must preserve user-selected workspaces, backups, and models.
 
-The first Nimvara install also removes an installed legacy Lantern executable and its
-shortcuts after the Nimvara payload is committed. Legacy `%LOCALAPPDATA%\Lantern\UserData`,
-workspaces, backups, and models are deliberately retained. This rename-upgrade path passed
-a sentinel-data preservation test on 2026-07-27.
+## Historical evidence and current qualification
 
-## Validated on this host
+The validation list below contains earlier custom-installer evidence and is not
+evidence for the current NSIS artifact. The authoritative current attempt is
+`WINDOWS-INSTALLER-0.7.1-ATTEMPT-2026-09-06.md`; installed-package qualification
+remains open until the canonical NSIS artifact completes clean install, upgrade,
+rollback, and uninstall-retention drills.
+
+The canonical release-pipeline correction and 0.7.2 local-install evidence are
+recorded in `WINDOWS-RELEASE-PIPELINE-2026-09-06.md`.
 
 - Native Rust safety suite: 19/19 passed (one measured benchmark intentionally ignored)
 - JavaScript safety, compatibility, CSP, and accessibility suite: 26/26 passed

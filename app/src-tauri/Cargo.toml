@@ -1,6 +1,6 @@
 [package]
 name = "nimvara"
-version = "0.7.1"
+version = "0.7.2"
 description = "Local-first Markdown knowledge application"
 authors = ["Nimvara"]
 edition = "2021"
