@@ -19,7 +19,7 @@ function error(id, code, message) {
 }
 
 async function call(id, method, params = {}) {
-  if (method === "initialize") return result(id, { protocolVersion: protocol, capabilities: { tools: { listChanged: false }, resources: {} }, serverInfo: { name: "nimvara", version: "0.7.0-dev" } });
+  if (method === "initialize") return result(id, { protocolVersion: protocol, capabilities: { tools: { listChanged: false }, resources: {} }, serverInfo: { name: "nimvara", version: "0.7.1-dev" } });
   if (method === "notifications/initialized") return null;
   if (method === "tools/list") return result(id, { tools: [
     { name: "nimvara_capabilities", description: "Report the current read-only workspace, API, and AI boundary capabilities.", inputSchema: { type: "object", properties: {} } },
@@ -38,7 +38,7 @@ async function call(id, method, params = {}) {
   else if (name === "nimvara_read_note") value = await readMarkdown(workspace, params.arguments?.path);
   else if (name === "nimvara_search") value = await searchMarkdown(workspace, params.arguments?.query);
   else if (name === "nimvara_note_context") value = await noteContext(workspace, params.arguments?.path);
-  else if (name === "nimvara_diagnostics") value = await diagnosticsReport(workspace, "0.7.0-dev");
+  else if (name === "nimvara_diagnostics") value = await diagnosticsReport(workspace, "0.7.1-dev");
   else return error(id, -32602, `Unknown or non-read-only tool: ${name}`);
   return result(id, { content: [{ type: "text", text: JSON.stringify(value) }], structuredContent: value });
 }

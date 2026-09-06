@@ -1,13 +1,13 @@
 param(
   [string]$IdentityName = 'Nimvara.Development',
   [string]$Publisher = 'CN=Nimvara Development',
-  [string]$Version = '0.7.0.0'
+  [string]$Version = '0.7.1.0'
 )
 
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $stage = Join-Path $project 'dist\windows-msix'
-$output = Join-Path $project 'dist\Nimvara-0.7.0-dev.msix'
+$output = Join-Path $project 'dist\Nimvara-0.7.1-dev.msix'
 $makeAppx = 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makeappx.exe'
 if (-not (Test-Path -LiteralPath $makeAppx)) { throw 'Windows SDK MakeAppx is required.' }
 

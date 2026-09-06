@@ -4,7 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { ready, server } from "./index.mjs";
 
-const version = "0.7.0-dev";
+const version = "0.7.1-dev";
 const localData = process.env.LOCALAPPDATA || process.cwd();
 const profile = path.join(localData, "Nimvara", "UserData");
 const candidates = [

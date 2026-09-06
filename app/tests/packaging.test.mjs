@@ -27,5 +27,5 @@ test("standard NSIS build entry point uses locked native dependencies and explic
   assert.match(script, /build --release --locked --offline/);
   assert.match(script, /tauri bundle --bundles nsis --ci --no-sign/);
   assert.match(script, /Push-Location \$tauriRoot/);
-  assert.match(script, /Nimvara-Setup-0\.7\.0-dev-nsis\.exe/);
+  assert.match(script, /Nimvara-Setup-\$\(\$version\)-dev-nsis\.exe/);
 });

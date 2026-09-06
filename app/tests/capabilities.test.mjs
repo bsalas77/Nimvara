@@ -23,8 +23,8 @@ test("extension capability contract documents local API and guarded AI", async (
 test("release surfaces use the packaged development version", async () => {
   const server = await readFile(path.join(root, "server", "index.mjs"), "utf8");
   const launcher = await readFile(path.join(root, "server", "desktop-launcher.mjs"), "utf8");
-  assert.match(server, /version: "0\.7\.0-dev"/);
-  assert.match(launcher, /version = "0\.7\.0-dev"/);
+  assert.match(server, /version: "0\.7\.1-dev"/);
+  assert.match(launcher, /version = "0\.7\.1-dev"/);
 });
 
 test("extension manifests are narrowly permissioned and unsigned builds are explicit", () => {

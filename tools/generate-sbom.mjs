@@ -36,7 +36,7 @@ const bom = {
   version: 1,
   metadata: {
     timestamp: new Date().toISOString(),
-    component: { type: "application", name: "Nimvara", version: "0.7.0" },
+    component: { type: "application", name: "Nimvara", version: "0.7.1" },
     tools: { components: [{ type: "application", name: "Nimvara zero-dependency SBOM generator", version: "1" }] }
   },
   components: [...components.values()].sort((a, b) => a.purl.localeCompare(b.purl))

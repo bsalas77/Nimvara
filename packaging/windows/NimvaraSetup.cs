@@ -10,12 +10,12 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Per-user installer for Nimvara")]
 [assembly: AssemblyCompany("Nimvara Development")]
 [assembly: AssemblyProduct("Nimvara")]
-[assembly: AssemblyVersion("0.7.0.0")]
-[assembly: AssemblyFileVersion("0.7.0.0")]
+[assembly: AssemblyVersion("0.7.1.0")]
+[assembly: AssemblyFileVersion("0.7.1.0")]
 
 internal static class NimvaraSetup
 {
-    private const string Version = "0.7.0-dev";
+    private const string Version = "0.7.1-dev";
 
     [STAThread]
     private static void Main(string[] args)

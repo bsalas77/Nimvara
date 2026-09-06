@@ -7,7 +7,11 @@ Engineering cannot truthfully complete these gates without the owner's identity,
 3. Decide whether the publisher is an individual or legal organization.
 4. Create and verify the Microsoft Partner Center developer account.
 5. Reserve the Store product identity and provide its package identity and publisher values.
-6. Create Azure Artifact Signing credentials if direct signed downloads will be offered.
+6. Final distribution-signing option: after Nimvara is public, fully FOSS under
+   an OSI-approved license, and meets its eligibility rules, apply to SignPath
+   Foundation for free managed code signing. Azure Artifact Signing remains the
+   paid direct-download alternative; Microsoft Store signing remains the
+   no-certificate-cost Store alternative.
 7. Provide verified public HTTPS privacy, support, security, and product URLs.
 8. Configure the GitHub repository, protected branches, release environment, secret scanning, and signing secrets.
 9. Commission an independent security assessment.

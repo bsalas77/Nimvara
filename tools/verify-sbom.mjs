@@ -9,7 +9,7 @@ if (bom.bomFormat !== "CycloneDX") failures.push("bomFormat must be CycloneDX");
 if (bom.specVersion !== "1.5") failures.push("specVersion must be 1.5");
 if (!/^urn:uuid:[0-9a-f-]{36}$/i.test(bom.serialNumber || "")) failures.push("serialNumber must be a UUID URN");
 if (bom.version !== 1) failures.push("version must be 1");
-if (bom.metadata?.component?.name !== "Nimvara" || bom.metadata?.component?.version !== "0.7.0") failures.push("application identity is missing or unexpected");
+if (bom.metadata?.component?.name !== "Nimvara" || bom.metadata?.component?.version !== "0.7.1") failures.push("application identity is missing or unexpected");
 if (!Array.isArray(bom.components) || bom.components.length === 0) failures.push("components must be non-empty");
 const refs = new Set();
 for (const component of bom.components || []) {
