@@ -1,0 +1,5 @@
+# Analyze Nimvara application code. Vendored GTK bindings and test fixtures are
+# built and tested separately, but are not Nimvara-maintained production code.
+paths-ignore:
+  - app/src-tauri/third_party/**
+  - app/tests/**
