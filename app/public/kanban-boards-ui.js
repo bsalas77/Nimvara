@@ -1,10 +1,9 @@
+import { desktopRequest } from "./desktop-request.js";
 const $ = (id) => document.getElementById(id);
 
 async function loadBoards(select) {
   try {
-    const response = await fetch("/api/kanban/boards");
-    if (!response.ok) return;
-    const boards = await response.json();
+    const boards = await desktopRequest("/api/kanban/boards");
     select.replaceChildren(new Option("Workspace boards…", ""), ...boards.map((board) => new Option(`${board.name} (${board.columns.join(" · ")})`, board.id)));
   } catch { /* UI remains usable with local saved views when the native bridge is unavailable. */ }
 }
@@ -25,8 +24,7 @@ function wireBoards() {
     if (!cleanName || cleanColumns.length < 2) return;
     const id = cleanName.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32);
     try {
-      const response = await fetch("/api/kanban/boards", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, name: cleanName, columns: cleanColumns }) });
-      if (!response.ok) throw new Error("Board could not be saved.");
+      await desktopRequest("/api/kanban/boards", { method: "POST", body: JSON.stringify({ id, name: cleanName, columns: cleanColumns }) });
       await loadBoards(select); select.value = id; window.nimvaraKanbanColumns = cleanColumns; if (typeof window.runKanban === "function") await window.runKanban(); save.textContent = "Board saved"; setTimeout(() => { save.textContent = "Save workspace board"; }, 1200);
     } catch (error) { save.textContent = error.message; setTimeout(() => { save.textContent = "Save workspace board"; }, 1800); }
   };

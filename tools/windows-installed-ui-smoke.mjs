@@ -158,6 +158,10 @@ try {
   await evaluate(`document.querySelector("#approveTaskChange").click()`);
   await waitFor(`document.querySelector("#footerStatus").textContent.includes("Task change checkpointed")`, "task checkpoint save");
   report.checks.taskDashboard = (await readFile(productivityPath, "utf8")).includes("- [x] Complete safely");
+  report.checks.nativeBridge = await evaluate(`Boolean(window.__TAURI__?.core?.invoke)`);
+  const savedBoard = await evaluate(`window.__TAURI__.core.invoke("native_save_kanban_board", {board:{id:"work",name:"Work",columns:["backlog","doing","done"]}})`);
+  const boards = await evaluate(`window.__TAURI__.core.invoke("native_list_kanban_boards")`);
+  report.checks.kanbanBoards = savedBoard.id === "work" && boards.length === 1 && boards[0].columns.join(",") === "backlog,doing,done";
   await evaluate(`document.querySelector("#closeTasks").click()`);
 
   await evaluate(`document.querySelector('[data-path="${encodeURIComponent("Nimvara Productivity Smoke.md")}"]').click()`);

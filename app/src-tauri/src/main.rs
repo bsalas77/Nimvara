@@ -528,6 +528,21 @@ fn native_compatibility_report(
 }
 
 #[tauri::command]
+fn native_list_kanban_boards(
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<Vec<native_core::KanbanBoard>, String> {
+    native_core::list_kanban_boards(&active_root(&state)?)
+}
+
+#[tauri::command]
+fn native_save_kanban_board(
+    board: native_core::KanbanBoard,
+    state: tauri::State<'_, native_core::NativeWorkspace>,
+) -> Result<native_core::KanbanBoard, String> {
+    native_core::save_kanban_board(&active_root(&state)?, board)
+}
+
+#[tauri::command]
 fn native_read_canvas(
     path: String,
     state: tauri::State<'_, native_core::NativeWorkspace>,
@@ -791,6 +806,8 @@ fn main() {
             native_note_context,
             native_workspace_dashboard,
             native_compatibility_report,
+            native_list_kanban_boards,
+            native_save_kanban_board,
             native_read_canvas,
             native_save_canvas,
             native_write_recovery,

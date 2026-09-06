@@ -1,4 +1,5 @@
 import { proposeCanvasEdge } from "./mindmap.js";
+import { desktopRequest } from "./desktop-request.js";
 const id = (value) => document.getElementById(value);
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -16,7 +17,7 @@ function showProposal(viewer, canvas, node, x, y) {
   const download = document.createElement("button"); download.className = "secondary"; download.textContent = "Download proposal";
   download.onclick = () => { const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([`${JSON.stringify(next, null, 2)}\n`], { type: "application/json" })); link.download = `${String(canvas.path || "canvas").split("/").at(-1)}.proposal.json`; link.click(); URL.revokeObjectURL(link.href); };
   const approve = document.createElement("button"); approve.textContent = "Approve and save";
-  approve.onclick = async () => { approve.disabled = true; try { await window.nimvaraApi("/api/canvas/save", { method: "POST", body: JSON.stringify({ path: canvas.path, canvas: next, expectedHash: canvas.hash }) }); panel.innerHTML = "<strong>Canvas saved and verified.</strong><p>The edit was checkpointed by the conflict-safe native path.</p>"; } catch (error) { panel.innerHTML = `<strong role="alert">Save refused.</strong><p>${escapeHtml(error.message || error)}</p>`; } };
+  approve.onclick = async () => { approve.disabled = true; try { await desktopRequest("/api/canvas/save", { method: "POST", body: JSON.stringify({ path: canvas.path, canvas: next, expectedHash: canvas.hash }) }); panel.innerHTML = "<strong>Canvas saved and verified.</strong><p>The edit was checkpointed by the conflict-safe native path.</p>"; } catch (error) { panel.innerHTML = `<strong role="alert">Save refused.</strong><p>${escapeHtml(error.message || error)}</p>`; } };
   panel.append(download, approve); viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel);
 }
 
@@ -24,7 +25,7 @@ function showEdgeProposal(viewer, canvas, from, to) {
   let proposal;
   try { proposal = proposeCanvasEdge(JSON.stringify(canvas), from.id, to.id); } catch (error) { const panel = document.createElement("section"); panel.className = "preview canvas-edit-review"; panel.setAttribute("role", "alert"); panel.textContent = error.message; viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel); return; }
   const next = JSON.parse(proposal.content), panel = document.createElement("section"); panel.className = "preview canvas-edit-review"; panel.setAttribute("role", "region"); panel.setAttribute("aria-label", "Canvas edge review"); panel.innerHTML = `<strong>Canvas edge proposal</strong><p>Connect ${escapeHtml(from.id)} → ${escapeHtml(to.id)}.</p><p>No canvas file has been changed.</p>`;
-  const approve = document.createElement("button"); approve.textContent = "Approve and save"; approve.onclick = async () => { approve.disabled = true; try { await window.nimvaraApi("/api/canvas/save", { method: "POST", body: JSON.stringify({ path: canvas.path, canvas: next, expectedHash: canvas.hash }) }); panel.innerHTML = "<strong>Canvas edge saved and verified.</strong>"; } catch (error) { panel.innerHTML = `<strong role="alert">Save refused.</strong><p>${escapeHtml(error.message || error)}</p>`; } };
+  const approve = document.createElement("button"); approve.textContent = "Approve and save"; approve.onclick = async () => { approve.disabled = true; try { await desktopRequest("/api/canvas/save", { method: "POST", body: JSON.stringify({ path: canvas.path, canvas: next, expectedHash: canvas.hash }) }); panel.innerHTML = "<strong>Canvas edge saved and verified.</strong>"; } catch (error) { panel.innerHTML = `<strong role="alert">Save refused.</strong><p>${escapeHtml(error.message || error)}</p>`; } };
   panel.append(approve); viewer.querySelector(".canvas-edit-review")?.remove(); viewer.append(panel);
 }
 
@@ -36,7 +37,7 @@ async function showCanvasHistory(viewer, canvas) {
   viewer.querySelector(".canvas-history")?.remove();
   viewer.append(panel);
   try {
-    const records = await window.nimvaraApi(`/api/history?path=${encodeURIComponent(canvas.path)}`);
+    const records = await desktopRequest(`/api/history?path=${encodeURIComponent(canvas.path)}`);
     const list = document.createElement("div");
     if (!records.length) list.textContent = "No Canvas checkpoints yet.";
     for (const record of records) {
@@ -48,7 +49,7 @@ async function showCanvasHistory(viewer, canvas) {
         if (!confirm("Restore this Canvas checkpoint? The current Canvas will be checkpointed first.")) return;
         button.disabled = true;
         try {
-          await window.nimvaraApi("/api/history/restore", { method: "POST", body: JSON.stringify({ checkpointId: record.id, expectedHash: canvas.hash }) });
+          await desktopRequest("/api/history/restore", { method: "POST", body: JSON.stringify({ checkpointId: record.id, expectedHash: canvas.hash }) });
           panel.innerHTML = "<strong>Canvas checkpoint restored and verified.</strong><p>Reopen the Canvas to review the restored layout.</p>";
         } catch (error) {
           button.disabled = false;
@@ -68,7 +69,7 @@ async function wireCanvas() {
   if (!viewer || !svg || !path || viewer.dataset.canvasWired === path) return;
   viewer.dataset.canvasWired = path;
   let canvas;
-  try { const response = await fetch(`/api/canvas?path=${encodeURIComponent(path)}`); if (!response.ok) return; canvas = await response.json(); } catch { return; }
+  try { canvas = await desktopRequest(`/api/canvas?path=${encodeURIComponent(path)}`); } catch { return; }
   const connect = document.createElement("button"); connect.type = "button"; connect.className = "secondary"; connect.textContent = "Connect nodes"; connect.setAttribute("aria-pressed", "false"); id("openCanvas")?.after(connect); let connectMode = false, firstNode = null; connect.onclick = () => { connectMode = !connectMode; firstNode = null; connect.setAttribute("aria-pressed", String(connectMode)); connect.textContent = connectMode ? "Cancel connect" : "Connect nodes"; };
   const history = document.createElement("button"); history.type = "button"; history.className = "secondary"; history.textContent = "Canvas history"; connect.after(history); history.onclick = () => showCanvasHistory(viewer, canvas);
   [...svg.querySelectorAll("g")].forEach((group, index) => {

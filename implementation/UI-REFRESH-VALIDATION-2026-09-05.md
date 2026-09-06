@@ -53,3 +53,12 @@ review before its installed-app lifecycle can be checked on this host.
 The full required/desired feature scope and acceptance criteria are recorded in
 `PRODUCTION-SCOPE-AND-ACCEPTANCE.md`; native parity, live sync, real AI, mobile,
 release operations and external gates remain open. Production approval remains false.
+
+## Follow-up — 2026-09-06
+
+The initial polished executable exposed a native-route parity gap in saved Kanban
+boards and Canvas editing/history. The source has now been corrected and the
+current native executable passed its automated workflow smoke. See
+`NATIVE-DESKTOP-PARITY-VALIDATION-2026-09-06.md`. The prior polished installer is
+not retroactively relabeled: it must be rebuilt before this correction reaches an
+installed copy.

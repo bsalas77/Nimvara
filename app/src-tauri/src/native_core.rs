@@ -96,6 +96,91 @@ pub struct CanvasSaveResult {
     pub checkpoint_id: Option<String>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub struct KanbanBoard {
+    pub id: String,
+    pub name: String,
+    pub columns: Vec<String>,
+}
+
+fn clean_kanban_board(mut board: KanbanBoard) -> Result<KanbanBoard, String> {
+    board.id = board.id.trim().to_ascii_lowercase();
+    board.name = board.name.trim().to_string();
+    let mut seen = HashSet::new();
+    board.columns = board
+        .columns
+        .into_iter()
+        .map(|value| value.trim().to_ascii_lowercase())
+        .filter(|value| seen.insert(value.clone()))
+        .collect::<Vec<_>>();
+    let valid_id = |value: &str, minimum: usize, maximum: usize| {
+        value.len() >= minimum
+            && value.len() <= maximum
+            && value
+                .chars()
+                .next()
+                .is_some_and(|character| character.is_ascii_lowercase())
+            && value.chars().all(|character| {
+                character.is_ascii_lowercase()
+                    || character.is_ascii_digit()
+                    || matches!(character, '_' | '-')
+            })
+    };
+    if !valid_id(&board.id, 3, 32)
+        || board.name.is_empty()
+        || board.name.len() > 120
+        || !(2..=20).contains(&board.columns.len())
+        || board.columns.iter().any(|column| !valid_id(column, 2, 32))
+    {
+        return Err("KANBAN_BOARD: Board id, name, or columns are invalid.".into());
+    }
+    Ok(board)
+}
+
+fn kanban_boards_path(root: &Path) -> Result<PathBuf, String> {
+    let meta = root.join(META);
+    if let Ok(metadata) = fs::symlink_metadata(&meta) {
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err("KANBAN_BOARD: Workspace metadata directory is unsafe.".into());
+        }
+    }
+    let path = meta.join("kanban-boards.json");
+    if let Ok(metadata) = fs::symlink_metadata(&path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err("KANBAN_BOARD: Board configuration is unsafe.".into());
+        }
+    }
+    Ok(path)
+}
+
+pub fn list_kanban_boards(root: &Path) -> Result<Vec<KanbanBoard>, String> {
+    let path = kanban_boards_path(root)?;
+    let content = match fs::read_to_string(&path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(format!("KANBAN_BOARD: {error}")),
+    };
+    let boards: Vec<KanbanBoard> = serde_json::from_str(&content)
+        .map_err(|_| "KANBAN_BOARD: Board configuration is invalid.".to_string())?;
+    boards.into_iter().map(clean_kanban_board).collect()
+}
+
+pub fn save_kanban_board(root: &Path, input: KanbanBoard) -> Result<KanbanBoard, String> {
+    let board = clean_kanban_board(input)?;
+    let path = kanban_boards_path(root)?;
+    let mut boards = list_kanban_boards(root)?;
+    boards.retain(|item| item.id != board.id);
+    boards.push(board.clone());
+    if boards.len() > 50 {
+        boards.drain(0..boards.len() - 50);
+    }
+    write_bytes_atomic(
+        &path,
+        format!("{}\n", serde_json::to_string_pretty(&boards).unwrap()).as_bytes(),
+    )?;
+    Ok(board)
+}
+
 #[derive(Serialize)]
 pub struct SearchResult {
     pub path: String,
@@ -2622,5 +2707,41 @@ mod tests {
         );
         fs::remove_dir_all(root).unwrap();
         fs::remove_dir_all(cache_root).unwrap();
+    }
+
+    #[test]
+    fn kanban_boards_are_validated_ordered_and_kept_in_private_metadata() {
+        let root = fixture();
+        assert!(list_kanban_boards(&root).unwrap().is_empty());
+        let saved = save_kanban_board(
+            &root,
+            KanbanBoard {
+                id: "Projects".into(),
+                name: " Projects ".into(),
+                columns: vec![
+                    "Backlog".into(),
+                    "Doing".into(),
+                    "Done".into(),
+                    "Doing".into(),
+                ],
+            },
+        )
+        .unwrap();
+        assert_eq!(saved.id, "projects");
+        assert_eq!(saved.columns, vec!["backlog", "doing", "done"]);
+        assert_eq!(list_kanban_boards(&root).unwrap(), vec![saved]);
+        assert!(save_kanban_board(
+            &root,
+            KanbanBoard {
+                id: "../bad".into(),
+                name: "Bad".into(),
+                columns: vec!["a".into(), "b".into()]
+            }
+        )
+        .unwrap_err()
+        .starts_with("KANBAN_BOARD:"));
+        let data = fs::read_to_string(root.join(META).join("kanban-boards.json")).unwrap();
+        assert!(!data.contains("Markdown"));
+        fs::remove_dir_all(root).unwrap();
     }
 }

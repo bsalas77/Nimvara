@@ -92,6 +92,8 @@ async function api(url, options = {}) {
       if (method === "GET" && parsed.pathname === "/api/workspace-files") return window.__TAURI__.core.invoke("native_workspace_files");
       if (method === "GET" && parsed.pathname === "/api/workspace-dashboard") return window.__TAURI__.core.invoke("native_workspace_dashboard");
       if (method === "GET" && parsed.pathname === "/api/compatibility-report") return window.__TAURI__.core.invoke("native_compatibility_report");
+      if (method === "GET" && parsed.pathname === "/api/kanban/boards") return window.__TAURI__.core.invoke("native_list_kanban_boards");
+      if (method === "POST" && parsed.pathname === "/api/kanban/boards") return window.__TAURI__.core.invoke("native_save_kanban_board", { board: input });
       if (method === "GET" && parsed.pathname === "/api/canvas") return window.__TAURI__.core.invoke("native_read_canvas", { path: parsed.searchParams.get("path") });
       if (method === "POST" && parsed.pathname === "/api/canvas/save") return window.__TAURI__.core.invoke("native_save_canvas", { path: input.path, canvas: input.canvas, expectedHash: input.expectedHash ?? null });
       if (method === "GET" && parsed.pathname === "/api/workspace-state") return window.__TAURI__.core.invoke("native_workspace_state", { path: parsed.searchParams.get("path") });
