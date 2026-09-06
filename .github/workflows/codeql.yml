@@ -24,20 +24,11 @@ jobs:
           - language: javascript-typescript
             build-mode: none
           - language: rust
-            build-mode: manual
+            build-mode: none
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - uses: github/codeql-action/init@fddeee1a7ece751b577e409a89057319e3172939 # v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-      - name: Install Linux native dependencies
-        if: matrix.language == 'rust'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
-      - name: Build Rust analysis target
-        if: matrix.language == 'rust'
-        working-directory: app/src-tauri
-        run: cargo build --locked
       - uses: github/codeql-action/analyze@fddeee1a7ece751b577e409a89057319e3172939 # v4
