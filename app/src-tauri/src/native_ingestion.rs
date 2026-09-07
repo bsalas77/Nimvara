@@ -126,43 +126,117 @@ fn decode_entities(value: &str) -> String {
         .replace("&apos;", "'")
 }
 
-fn remove_block(mut value: String, tag: &str) -> String {
-    loop {
-        let lower = value.to_lowercase();
-        let Some(start) = lower.find(&format!("<{tag}")) else {
-            break;
-        };
-        let Some(close) = lower[start..].find(&format!("</{tag}>")) else {
-            let end = lower[start..]
-                .find('>')
-                .map_or(value.len(), |offset| start + offset + 1);
-            value.replace_range(start..end, "");
-            continue;
-        };
-        let end = start + close + tag.len() + 3;
-        value.replace_range(start..end, "");
-    }
-    value
+fn html_tag_name(token: &str) -> (bool, String) {
+    let trimmed = token.trim_start();
+    let closing = trimmed.starts_with('/');
+    let candidate = if closing { &trimmed[1..] } else { trimmed }.trim_start();
+    let name = candidate
+        .chars()
+        .take_while(|character| character.is_ascii_alphanumeric() || matches!(character, ':' | '-'))
+        .collect::<String>()
+        .to_ascii_lowercase();
+    (closing, name)
 }
 
-fn strip_tags(value: &str) -> String {
+fn clean_html_text(value: &str) -> String {
+    decode_entities(value)
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn escape_html_delimiters(value: String) -> String {
+    value.replace('<', "&lt;").replace('>', "&gt;")
+}
+
+// This performs no HTML rendering: it keeps only readable text and makes it inert.
+fn html_to_safe_text(html: &str) -> String {
+    const SUPPRESSED: &[&str] = &[
+        "script", "style", "noscript", "iframe", "object", "embed", "svg", "math", "form", "input",
+        "button", "textarea", "select", "template",
+    ];
+    const BLOCKS: &[&str] = &[
+        "p",
+        "div",
+        "section",
+        "article",
+        "main",
+        "header",
+        "footer",
+        "nav",
+        "aside",
+        "blockquote",
+        "pre",
+    ];
     let mut output = String::new();
-    let mut inside = false;
-    for character in value.chars() {
-        match character {
-            '<' => inside = true,
-            '>' => {
-                inside = false;
+    let mut offset = 0;
+    let mut suppressed: Option<String> = None;
+    while offset < html.len() {
+        if html[offset..].starts_with("<!--") {
+            offset = html[offset + 4..]
+                .find("-->")
+                .map_or(html.len(), |end| offset + 4 + end + 3);
+            continue;
+        }
+        let character = html[offset..]
+            .chars()
+            .next()
+            .expect("offset is a UTF-8 boundary");
+        if character != '<' {
+            if suppressed.is_none() {
+                output.push(character);
+            }
+            offset += character.len_utf8();
+            continue;
+        }
+        let Some(relative_end) = html[offset + 1..].find('>') else {
+            if suppressed.is_none() {
+                output.push_str(&html[offset..]);
+            }
+            break;
+        };
+        let end = offset + 1 + relative_end;
+        let (closing, name) = html_tag_name(&html[offset + 1..end]);
+        offset = end + 1;
+        if name.is_empty() {
+            continue;
+        }
+        if let Some(active) = &suppressed {
+            if closing && name == *active {
+                suppressed = None;
+            }
+            continue;
+        }
+        if SUPPRESSED.contains(&name.as_str()) {
+            if !closing {
+                suppressed = Some(name);
+            }
+            continue;
+        }
+        if name == "br" {
+            output.push('\n');
+        } else if name == "li" && !closing {
+            output.push_str("\n- ");
+        } else if name.len() == 2
+            && name.starts_with('h')
+            && matches!(name.as_bytes()[1], b'1'..=b'6')
+        {
+            if closing {
+                output.push('\n');
+            } else {
+                output.push('\n');
+                output.push_str(&"#".repeat((name.as_bytes()[1] - b'0') as usize));
                 output.push(' ');
             }
-            _ if !inside => output.push(character),
-            _ => {}
+        } else if BLOCKS.contains(&name.as_str()) {
+            output.push('\n');
         }
     }
-    decode_entities(&output)
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+    escape_html_delimiters(clean_html_text(&output))
 }
 
 fn html_extract(html: &str) -> (String, String, Option<String>) {
@@ -173,7 +247,7 @@ fn html_extract(html: &str) -> (String, String, Option<String>) {
         .and_then(|start| {
             lower[start..]
                 .find("</title>")
-                .map(|offset| strip_tags(&html[start..start + offset]))
+                .map(|offset| html_to_safe_text(&html[start..start + offset]))
         })
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "Captured page".into());
@@ -199,21 +273,7 @@ fn html_extract(html: &str) -> (String, String, Option<String>) {
             )
         }
     });
-    let mut safe = html.to_string();
-    for tag in [
-        "script", "style", "noscript", "iframe", "object", "embed", "svg", "math", "form",
-        "template",
-    ] {
-        safe = remove_block(safe, tag);
-    }
-    for tag in [
-        "h1", "h2", "h3", "p", "div", "section", "article", "li", "br",
-    ] {
-        safe = safe
-            .replace(&format!("<{tag}>"), "\n")
-            .replace(&format!("</{tag}>"), "\n");
-    }
-    let content = strip_tags(&safe);
+    let content = html_to_safe_text(html);
     (title, content, canonical)
 }
 
@@ -730,6 +790,16 @@ mod tests {
         assert!(content.contains("Hello"));
         assert!(!content.contains("alert"));
         assert!(!content.contains("steal"));
+    }
+
+    #[test]
+    fn sanitizer_makes_encoded_and_malformed_active_markup_inert() {
+        let (_, content, _) = html_extract("<h1>Safe</h1><ScRiPt data-x='>'>alert(1)</ScRiPt>&lt;script&gt;still text&lt;/script&gt;<form><input value='secret'></form><broken");
+        assert!(content.contains("# Safe"));
+        assert!(content.contains("&lt;script&gt;still text&lt;/script&gt;"));
+        assert!(!content.contains("alert(1)"));
+        assert!(!content.contains("secret"));
+        assert!(content.contains("&lt;broken"));
     }
 
     #[test]
