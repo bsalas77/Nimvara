@@ -864,7 +864,14 @@ pub fn note_context(root: &Path, relative: &str) -> Result<NoteContext, String> 
     let mut outgoing = Vec::new();
     for source in &notes {
         for link in &parsed[source].1 {
-            let (status, path, candidates) = resolve(source, &link.target);
+            // [[#Heading]] and [[#^block-id]] are deliberate same-note links.
+            // Resolve their empty file portion to the source note so embeds and
+            // navigation never mislabel them as missing workspace files.
+            let (status, path, candidates) = if link.target.is_empty() && link.heading.is_some() {
+                ("resolved".into(), Some(source.clone()), vec![source.clone()])
+            } else {
+                resolve(source, &link.target)
+            };
             if status != "resolved" {
                 diagnostic_count += 1;
             }
@@ -2599,6 +2606,25 @@ mod tests {
         let plan = note_context(&root, "Projects/Plan.md").unwrap();
         assert_eq!(plan.outgoing[0].path.as_deref(), Some("Home.md"));
         assert_eq!(plan.diagnostic_count, 2);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn link_context_resolves_same_note_heading_and_block_references() {
+        let root = fixture();
+        fs::write(
+            root.join("Plan.md"),
+            "# Plan\n[[#Plan]]\n[[#^proof]]\nEvidence ^proof\n",
+        )
+        .unwrap();
+        let plan = note_context(&root, "Plan.md").unwrap();
+        assert_eq!(plan.outgoing.len(), 2);
+        assert!(plan.outgoing.iter().all(|link| link.status == "resolved"));
+        assert!(plan
+            .outgoing
+            .iter()
+            .all(|link| link.path.as_deref() == Some("Plan.md")));
+        assert_eq!(plan.diagnostic_count, 0);
         fs::remove_dir_all(root).unwrap();
     }
 

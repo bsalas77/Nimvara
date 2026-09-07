@@ -428,7 +428,12 @@ export async function buildLinkIndex(root) {
   const backlinks = Object.fromEntries(notes.map((note) => [note, []]));
   for (const note of notes) {
     outgoing[note] = structures.get(note).wikilinks.map((link) => {
-      const resolution = resolve(note, link.target);
+      // Obsidian-style [[#Heading]] and [[#^block-id]] references stay inside
+      // the current note. They are valid navigation/transclusion targets even
+      // though their file portion is intentionally empty.
+      const resolution = !link.target && link.heading
+        ? { status: "resolved", path: note, candidates: [note] }
+        : resolve(note, link.target);
       if (resolution.status === "resolved") backlinks[resolution.path].push({ source: note, line: link.line, alias: link.alias, heading: link.heading });
       return { ...link, ...resolution };
     });

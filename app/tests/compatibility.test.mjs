@@ -41,6 +41,16 @@ test("URL-encoded wikilink targets resolve without changing source bytes", async
   await rm(root, { recursive: true, force: true });
 });
 
+test("same-note heading and block references resolve without inventing a file", async (t) => {
+  const root = await fixture(); t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, "Plan.md"), "# Plan\n[[#Plan]]\n[[#^proof]]\nEvidence ^proof\n", "utf8");
+  const index = await buildLinkIndex(root);
+  assert.deepEqual(index.outgoing["Plan.md"].map(({ status, path, heading }) => ({ status, path, heading })), [
+    { status: "resolved", path: "Plan.md", heading: "Plan" },
+    { status: "resolved", path: "Plan.md", heading: "^proof" }
+  ]);
+});
+
 test("link index resolves exact, relative, and unique basename links with backlinks", async (t) => {
   const root = await fixture(); t.after(() => rm(root, { recursive: true, force: true }));
   await writeFile(path.join(root, "Home.md"), "[[Projects/Plan]]\n[[Unique]]");
