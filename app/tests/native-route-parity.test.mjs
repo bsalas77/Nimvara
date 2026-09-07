@@ -31,4 +31,6 @@ test("native interactive boards and canvas edits use the direct desktop route ad
   assert.match(app, /native_migrate_workspace/);
   assert.match(migration, /window\.__TAURI__\?\.core\?\.invoke/);
   assert.match(extensions, /window\.__TAURI__\?\.core\?\.invoke/);
+  assert.match(runtime, /nimvaraPreviewKanbanMove/);
+  assert.match(app, /window\.nimvaraPreviewKanbanMove = previewKanbanMove/);
 });

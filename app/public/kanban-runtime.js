@@ -15,5 +15,17 @@ import { desktopRequest } from "./desktop-request.js";
     const configured = Array.isArray(window.nimvaraKanbanColumns) ? window.nimvaraKanbanColumns : [];
     const defaults = configured.length ? configured : ["backlog", "doing", "review", "done"];
     const columns = [...new Set([...defaults, ...tasks.map(classify)])];
-    board.innerHTML = columns.map((column) => `<section class="kanban-column" aria-labelledby="kanban-${esc(column)}"><h3 id="kanban-${esc(column)}">${esc(column.replaceAll("_", " "))}</h3>${tasks.filter((task) => classify(task) === column).map((task) => `<article class="kanban-card"><strong>${esc(task.text)}</strong><small>${esc(task.path)} · line ${task.line}</small></article>`).join("") || "<p>No tasks.</p>"}</section>`).join("");
+    const encodeTask = (task) => encodeURIComponent(JSON.stringify(task));
+    board.innerHTML = columns.map((column) => `<section class="kanban-column" aria-labelledby="kanban-${esc(column)}"><h3 id="kanban-${esc(column)}">${esc(column.replaceAll("_", " "))}</h3>${tasks.filter((task) => classify(task) === column).map((task) => {
+      const moves = columns.filter((target) => target !== column).map((target) => `<button type="button" class="secondary kanban-move" data-kanban-task="${encodeTask(task)}" data-kanban-target="${encodeURIComponent(target)}">Move to ${esc(target.replaceAll("_", " "))}</button>`).join("");
+      return `<article class="kanban-card"><strong>${esc(task.text)}</strong><small>${esc(task.path)} · line ${task.line}</small><div class="kanban-card-actions">${moves}</div></article>`;
+    }).join("") || "<p>No tasks.</p>"}</section>`).join("");
+    board.querySelectorAll("[data-kanban-task]").forEach((button) => button.onclick = () => {
+      try {
+        const task = JSON.parse(decodeURIComponent(button.dataset.kanbanTask));
+        const target = decodeURIComponent(button.dataset.kanbanTarget);
+        if (typeof window.nimvaraPreviewKanbanMove !== "function") throw new Error("Kanban review controls are unavailable.");
+        window.nimvaraPreviewKanbanMove(task, target);
+      } catch (error) { board.insertAdjacentHTML("afterbegin", `<p role="alert">${esc(error.message)}</p>`); }
+    });
   };
