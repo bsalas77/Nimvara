@@ -28,6 +28,15 @@ test("safe preview supports callouts and wikilinks while escaping active HTML", 
   assert.match(rendered, /&lt;script&gt;/);
 });
 
+test("preview renders ordinary safe links and strikethrough without enabling script schemes", () => {
+  const rendered = renderMarkdownPreview("[Nimvara](https://example.org/docs?q=one&two=2) and ~~retired~~ and [bad](javascript:alert(1))");
+  assert.match(rendered, /href="https:\/\/example.org\/docs\?q=one&amp;two=2"/);
+  assert.match(rendered, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(rendered, /<del>retired<\/del>/);
+  assert.doesNotMatch(rendered, /href="javascript:/);
+  assert.match(rendered, /\[bad\]\(javascript:alert\(1\)\)/);
+});
+
 test("local settings reject traversal and clamp editor size", () => {
   assert.deepEqual(normalizeSettings({ dailyFolder: "../bad", folderNoteName: "bad/name", editorFontSize: 99 }), { dailyFolder: "Daily", folderNoteName: "_index", editorFontSize: 24, theme: "dark" });
 });

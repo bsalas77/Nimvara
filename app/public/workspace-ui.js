@@ -9,14 +9,31 @@ export function buildFileTree(paths) {
 }
 
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-const inline = (value) => escapeHtml(value)
-  .replace(/`([^`]+)`/g, "<code>$1</code>")
-  .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-  .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-  .replace(/\$([^$\n]+)\$/g, '<span class="math-inline">$1</span>')
-  .replace(/!\[\[([^\]]+)\]\]/g, '<button class="embed-indicator" data-preview-embed="$1">Load embed: $1</button>')
-  .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '<span class="wikilink" data-preview-link="$1">$2</span>')
-  .replace(/\[\[([^\]]+)\]\]/g, '<span class="wikilink" data-preview-link="$1">$1</span>');
+function safeExternalHref(value) {
+  const href = String(value).trim();
+  try {
+    const parsed = new URL(href);
+    return ["https:", "http:", "mailto:"].includes(parsed.protocol) ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+const inline = (value) => {
+  let rendered = escapeHtml(value)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/\$([^$\n]+)\$/g, '<span class="math-inline">$1</span>')
+    .replace(/!\[\[([^\]]+)\]\]/g, '<button class="embed-indicator" data-preview-embed="$1">Load embed: $1</button>')
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '<span class="wikilink" data-preview-link="$1">$2</span>')
+    .replace(/\[\[([^\]]+)\]\]/g, '<span class="wikilink" data-preview-link="$1">$1</span>');
+  return rendered.replace(/(^|[^!])\[([^\]]+)\]\(([^)\s]+)\)/g, (whole, prefix, label, href) => {
+    const safeHref = safeExternalHref(href.replaceAll("&amp;", "&"));
+    return safeHref ? `${prefix}<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer">${label}</a>` : whole;
+  });
+};
 
 export function renderMarkdownPreview(markdown) {
   const output = [], lines = String(markdown).split(/\r?\n/), footnotes = new Map(); let fenced = false, list = false, callout = null, math = false;
