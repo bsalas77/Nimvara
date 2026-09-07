@@ -1,0 +1,20 @@
+# Project-local Codex configuration for Nimvara.
+# This does not affect Codex settings outside this repository.
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 1
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "medium"
+
+[agents.nimvara_architect]
+description = "Use for architecture, security, authentication, difficult debugging, and final reviews."
+config_file = "agents/nimvara_architect.toml"
+
+[agents.nimvara_implementer]
+description = "Use for bounded routine implementation and ordinary debugging."
+config_file = "agents/nimvara_implementer.toml"
+
+[agents.nimvara_maintainer]
+description = "Use for small, clearly-defined edits and mechanical documentation work."
+config_file = "agents/nimvara_maintainer.toml"
