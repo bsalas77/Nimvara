@@ -27,6 +27,8 @@ jobs:
         run: node tests/run-all.mjs
       - name: Select pinned Rust toolchain
         run: rustup toolchain install 1.97.1 --profile minimal --component clippy,rustfmt
+      - name: Install pinned Tauri CLI
+        run: cargo +1.97.1 install tauri-cli --version 2.11.4 --locked
       - name: Run native qualification
         working-directory: app/src-tauri
         run: |
